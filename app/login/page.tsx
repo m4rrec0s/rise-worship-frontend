@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Music } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
@@ -16,19 +16,75 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
+import { LoginCredentials } from "../types/user";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../context/auth-context";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const router = useRouter();
+  const { loginWithGoogle, loginWithEmailAndPassword, isAuthenticated } =
+    useAuth();
+  const [credentials, setCredentials] = useState<LoginCredentials>({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/");
+    }
+  }, [isAuthenticated, router]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login with:", { email, password });
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await loginWithEmailAndPassword(credentials);
+    } catch (err: unknown) {
+      let errorMessage = "Ocorreu um erro ao fazer login";
+
+      if (err instanceof Error) {
+        if (err.message.includes("auth/invalid-credential")) {
+          errorMessage = "Email ou senha inválidos";
+        } else if (err.message.includes("auth/user-not-found")) {
+          errorMessage = "Usuário não encontrado";
+        } else if (err.message.includes("auth/wrong-password")) {
+          errorMessage = "Senha incorreta";
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+      }
+
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    try {
+      await loginWithGoogle();
+    } catch (err: unknown) {
+      let errorMessage = "Erro ao fazer login com Google";
+      if (err instanceof Error) {
+        errorMessage = err.message || errorMessage;
+      }
+      setError(errorMessage);
+    }
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
@@ -42,15 +98,21 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-100 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleEmailLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={credentials.email}
+                onChange={handleChange}
+                name="email"
                 required
               />
             </div>
@@ -67,8 +129,9 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={credentials.password}
+                onChange={handleChange}
+                name="password"
                 required
               />
             </div>
@@ -76,7 +139,7 @@ export default function LoginPage() {
               type="submit"
               className="w-full bg-orange-500 hover:bg-orange-600"
             >
-              Sign in
+              {isSubmitting ? "Entrando..." : "Entrar"}
             </Button>
           </form>
           <div className="relative mt-6">
@@ -90,7 +153,11 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="mt-6">
-            <Button variant="outline" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleLogin}
+            >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

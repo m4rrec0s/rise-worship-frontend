@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronLeft, Plus, Search, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, Plus, Search, Calendar, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -11,80 +12,72 @@ import {
   CardTitle,
   CardDescription,
 } from "@/app/components/ui/card";
-
-const allSetlists = [
-  {
-    id: "1",
-    title: "Sunday Morning - May 12",
-    songs: 5,
-    date: "May 12, 2024",
-    leader: "John Doe",
-  },
-  {
-    id: "2",
-    title: "Sunday Evening - May 12",
-    songs: 4,
-    date: "May 12, 2024",
-    leader: "Jane Smith",
-  },
-  {
-    id: "3",
-    title: "Midweek Service - May 15",
-    songs: 3,
-    date: "May 15, 2024",
-    leader: "Mike Johnson",
-  },
-  {
-    id: "4",
-    title: "Sunday Morning - May 19",
-    songs: 5,
-    date: "May 19, 2024",
-    leader: "John Doe",
-  },
-  {
-    id: "5",
-    title: "Sunday Evening - May 19",
-    songs: 4,
-    date: "May 19, 2024",
-    leader: "Sarah Williams",
-  },
-  {
-    id: "6",
-    title: "Midweek Service - May 22",
-    songs: 3,
-    date: "May 22, 2024",
-    leader: "Mike Johnson",
-  },
-  {
-    id: "7",
-    title: "Sunday Morning - May 26",
-    songs: 5,
-    date: "May 26, 2024",
-    leader: "John Doe",
-  },
-  {
-    id: "8",
-    title: "Sunday Evening - May 26",
-    songs: 4,
-    date: "May 26, 2024",
-    leader: "Jane Smith",
-  },
-];
-
-// Mock data for groups
-const groups = {
-  "1": { name: "Sunday Worship Team" },
-  "2": { name: "Youth Worship" },
-  "3": { name: "Midweek Service" },
-};
+import { useApi } from "@/app/hooks/use-api";
+import { Group } from "@/app/types/group";
+import { Setlist } from "@/app/types/setlist";
 
 export default function SetlistsPage() {
   const params = useParams();
   const groupId = params.groupId as string;
-  const group = groups[groupId as keyof typeof groups];
+  const api = useApi();
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [group, setGroup] = useState<Group | null>(null);
+  const [allSetlists, setAllSetlists] = useState<Setlist[]>([]);
+  const [filteredSetlists, setFilteredSetlists] = useState<Setlist[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        // Buscar dados do grupo
+        const groupData = await api.getGroupById(groupId);
+        setGroup(groupData);
+
+        // Buscar setlists do grupo
+        const setlistsData = await api.getSetListsByGroup(groupId);
+        setAllSetlists(setlistsData);
+        setFilteredSetlists(setlistsData);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
+
+  useEffect(() => {
+    // Filtrar setlists conforme pesquisa
+    if (searchQuery.trim() === "") {
+      setFilteredSetlists(allSetlists);
+    } else {
+      const filtered = allSetlists.filter(
+        (setlist) =>
+          setlist.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          setlist.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredSetlists(filtered);
+    }
+  }, [searchQuery, allSetlists]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8 flex justify-center items-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+      </div>
+    );
+  }
 
   if (!group) {
-    return <div className="container mx-auto py-8">Group not found</div>;
+    return <div className="container mx-auto py-8">Grupo não encontrado</div>;
   }
 
   return (
@@ -95,45 +88,93 @@ export default function SetlistsPage() {
             <ChevronLeft className="h-5 w-5" />
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">All Setlists - {group.name}</h1>
+        <h1 className="text-2xl font-bold">Todas as Setlists - {group.name}</h1>
       </div>
 
       <div className="flex justify-between items-center mb-6">
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search setlists..." className="pl-10" />
+          <Input
+            placeholder="Buscar setlists..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={handleSearch}
+          />
         </div>
         <Button asChild className="bg-orange-500 hover:bg-orange-600">
           <Link href={`/groups/${groupId}/create-setlist`}>
             <Plus className="mr-2 h-4 w-4" />
-            Create Setlist
+            Criar Setlist
           </Link>
         </Button>
       </div>
 
-      <div className="grid gap-4">
-        {allSetlists.map((setlist) => (
-          <Card key={setlist.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="py-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="text-lg">{setlist.title}</CardTitle>
-                  <CardDescription>Leader: {setlist.leader}</CardDescription>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {setlist.date}
+      {filteredSetlists.length === 0 ? (
+        <div className="text-center py-12">
+          {searchQuery.trim() === "" ? (
+            <>
+              <h2 className="text-xl font-semibold mb-2">
+                Nenhuma setlist encontrada
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Comece criando uma setlist para seu próximo culto.
+              </p>
+              <Button asChild className="bg-orange-500 hover:bg-orange-600">
+                <Link href={`/groups/${groupId}/create-setlist`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Primeira Setlist
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold mb-2">
+                Nenhum resultado encontrado
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Não foi encontrada nenhuma setlist com {`${searchQuery}`}.
+              </p>
+              <Button variant="outline" onClick={() => setSearchQuery("")}>
+                Limpar Busca
+              </Button>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {filteredSetlists.map((setlist) => (
+            <Link
+              key={setlist.id}
+              href={`/groups/${groupId}/setlists/${setlist.id}`}
+              className="block"
+            >
+              <Card className="hover:shadow-md transition-shadow">
+                <CardHeader className="py-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-lg">{setlist.title}</CardTitle>
+                      <CardDescription>
+                        Líder: {setlist.creator?.name || "Desconhecido"}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        {new Date(setlist.createdAt).toLocaleDateString(
+                          "pt-BR"
+                        )}
+                      </div>
+                      <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-sm font-medium">
+                        {setlist.musics?.length || 0} músicas
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-sm font-medium">
-                    {setlist.songs} songs
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

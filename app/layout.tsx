@@ -6,6 +6,8 @@ import { Navbar } from "@/app/components/navbar";
 // import { ThemeProvider } from "@/app/components/theme-provider"
 import { SidebarProvider } from "@/app/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar";
+import AuthProvider from "./context/auth-context";
+import { Toaster } from "@/app/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,15 +25,18 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         {/* <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange> */}
-        <SidebarProvider defaultOpen={false}>
-          <div className="flex flex-col h-screen w-full">
-            <Navbar />
-            <div className="flex flex-1 overflow-hidden">
-              <AppSidebar />
-              <main className="flex-1 overflow-auto">{children}</main>
+        <AuthProvider>
+          <SidebarProvider defaultOpen={false}>
+            <div className="flex flex-col h-screen w-full">
+              <Navbar />
+              <div className="flex flex-1 overflow-hidden">
+                <AppSidebar />
+                <main className="flex-1 overflow-auto">{children}</main>
+              </div>
             </div>
-          </div>
-        </SidebarProvider>
+            <Toaster />
+          </SidebarProvider>
+        </AuthProvider>
         {/* </ThemeProvider> */}
       </body>
     </html>
