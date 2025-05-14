@@ -18,7 +18,6 @@ interface AddUserToGroupData {
 }
 
 class ApiService {
-  // Cache que pode ser acessado por toda a aplicação
   private static globalCache: CacheType = {
     users: null,
     groups: null,
@@ -27,14 +26,12 @@ class ApiService {
     loading: false,
   };
 
-  // Método para limpar todo o cache
   clearAllCache() {
     Object.keys(ApiService.globalCache).forEach((key) => {
       ApiService.globalCache[key] = null;
     });
   }
 
-  // Método para limpar um cache específico
   clearCache(key: string) {
     if (key in ApiService.globalCache) {
       ApiService.globalCache[key] = null;
@@ -69,7 +66,6 @@ class ApiService {
         "Content-Type": "multipart/form-data",
       },
     });
-    // Invalidar o cache de usuários após atualização
     this.clearCache("users");
     return response.data;
   };
@@ -88,14 +84,12 @@ class ApiService {
 
   deleteUser = async (id: string) => {
     const response = await axiosClient.delete(`/user/${id}`);
-    // Invalidar o cache de usuários após exclusão
     this.clearCache("users");
     return response.data;
   };
 
   // ===== GRUPOS =====
 
-  // Método para limpar o cache de grupos
   clearGroupsCache = () => {
     this.clearCache("groups");
   };
@@ -106,15 +100,21 @@ class ApiService {
         "Content-Type": "multipart/form-data",
       },
     });
-    // Invalidar o cache de grupos após criar um novo
     this.clearCache("groups");
     return response.data;
   };
+  getAllGroups = async (page = 1, perPage = 15, search = "") => {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString(),
+    });
 
-  getAllGroups = async () => {
-    if (ApiService.globalCache.groups) return ApiService.globalCache.groups;
-    const response = await axiosClient.get("/groups");
-    ApiService.globalCache.groups = response.data;
+    if (search) {
+      queryParams.append("search", search);
+    }
+
+    const response = await axiosClient.get(`/groups?${queryParams.toString()}`);
+
     return response.data;
   };
 
@@ -125,7 +125,7 @@ class ApiService {
 
     const response = await axiosClient.get(`/groups/user/${userId}`);
     ApiService.globalCache[cacheKey] = response.data;
-    ApiService.globalCache.groups = response.data; // Manter compatibilidade com cache existente
+    ApiService.globalCache.groups = response.data;
     return response.data;
   };
 
@@ -159,7 +159,6 @@ class ApiService {
       { permission }
     );
 
-    // Invalidar cache de membros do grupo
     this.clearCache(`group_members_${groupId}`);
     return response.data;
   };
@@ -170,7 +169,6 @@ class ApiService {
       userData
     );
 
-    // Invalidar cache de membros do grupo
     this.clearCache(`group_members_${groupId}`);
     return response.data;
   };
@@ -179,7 +177,6 @@ class ApiService {
     const response = await axiosClient.post(`/groups/${groupId}/join`, {
       inviteCode,
     });
-    // Invalidar cache de grupos após entrar em um novo
     this.clearCache("groups");
     return response.data;
   };
@@ -190,7 +187,6 @@ class ApiService {
         "Content-Type": "multipart/form-data",
       },
     });
-    // Invalidar cache de grupos e do grupo específico
     this.clearCache("groups");
     this.clearCache(`group_${groupId}`);
     return response.data;
@@ -198,7 +194,6 @@ class ApiService {
 
   leaveGroup = async (groupId: string) => {
     const response = await axiosClient.delete(`/groups/${groupId}/leave`);
-    // Invalidar cache de grupos após sair
     this.clearCache("groups");
     return response.data;
   };
@@ -208,14 +203,12 @@ class ApiService {
       `/groups/${groupId}/members/${userId}`
     );
 
-    // Invalidar cache de membros do grupo
     this.clearCache(`group_members_${groupId}`);
     return response.data;
   };
 
   deleteGroup = async (groupId: string) => {
     const response = await axiosClient.delete(`/groups/${groupId}`);
-    // Invalidar cache de grupos após exclusão
     this.clearCache("groups");
     this.clearCache(`group_${groupId}`);
     return response.data;
@@ -233,11 +226,9 @@ class ApiService {
 
   // ===== SETLISTS =====
 
-  // Método para limpar o cache de setlists
   clearSetlistsCache = () => {
     this.clearCache("setlists");
 
-    // Limpar também caches específicos de setlists
     Object.keys(ApiService.globalCache).forEach((key) => {
       if (key.startsWith("setlist_")) {
         this.clearCache(key);
@@ -251,7 +242,6 @@ class ApiService {
         "Content-Type": "multipart/form-data",
       },
     });
-    // Invalidar o cache de setlists após criar uma nova
     this.clearSetlistsCache();
     return response.data;
   };
@@ -290,24 +280,22 @@ class ApiService {
         "Content-Type": "multipart/form-data",
       },
     });
-    // Invalidar o cache de setlists após atualização
     this.clearSetlistsCache();
     return response.data;
   };
 
   deleteSetList = async (id: string) => {
     const response = await axiosClient.delete(`/setlists/${id}`);
-    // Invalidar o cache de setlists após exclusão
     this.clearSetlistsCache();
     return response.data;
   };
 
   // ===== SETLIST MÚSICAS =====
+
   addMusicToSetList = async (setlistId: string, musicId: string) => {
     const response = await axiosClient.post(
       `/setlists/${setlistId}/musics/${musicId}`
     );
-    // Invalidar cache de setlist específica
     this.clearCache(`setlist_${setlistId}`);
     return response.data;
   };
@@ -316,7 +304,6 @@ class ApiService {
     const response = await axiosClient.delete(
       `/setlists/${setlistId}/musics/${musicId}`
     );
-    // Invalidar cache de setlist específica
     this.clearCache(`setlist_${setlistId}`);
     return response.data;
   };
@@ -330,18 +317,15 @@ class ApiService {
       `/setlists/${setlistId}/musics/${musicId}/order`,
       orderData
     );
-    // Invalidar cache de setlist específica
     this.clearCache(`setlist_${setlistId}`);
     return response.data;
   };
 
   // ===== MÚSICAS =====
 
-  // Método para limpar o cache de músicas
   clearMusicsCache = () => {
     this.clearCache("musics");
 
-    // Limpar também caches específicos de músicas
     Object.keys(ApiService.globalCache).forEach((key) => {
       if (key.startsWith("music_") || key.startsWith("musics_")) {
         this.clearCache(key);
@@ -359,9 +343,7 @@ class ApiService {
         },
       }
     );
-    // Invalidar o cache de músicas após criar uma nova
     this.clearMusicsCache();
-    // Invalidar o cache de músicas deste grupo específico
     this.clearCache(`musics_group_${groupId}`);
     return response.data;
   };
@@ -382,7 +364,6 @@ class ApiService {
     perPage = 15,
     search = ""
   ) => {
-    // Para dados paginados ou com busca, não usamos cache para garantir dados atualizados
     const queryParams = new URLSearchParams({
       page: page.toString(),
       per_page: perPage.toString(),
@@ -414,14 +395,12 @@ class ApiService {
         "Content-Type": "multipart/form-data",
       },
     });
-    // Invalidar o cache de músicas após atualização
     this.clearMusicsCache();
     return response.data;
   };
 
   deleteMusic = async (id: string) => {
     const response = await axiosClient.delete(`/musics/${id}`);
-    // Invalidar o cache de músicas após exclusão
     this.clearMusicsCache();
     return response.data;
   };
@@ -448,27 +427,22 @@ class ApiService {
 }
 
 export const useApi = () => {
-  // Usar useState para gerenciar um estado de refresh de cache
   const [refreshToken, setRefreshToken] = useState(0);
 
-  // Função para invalidar todo o cache e forçar atualização
   const invalidateCache = useCallback(() => {
     setRefreshToken((prev) => prev + 1);
   }, []);
 
-  // Criar uma instância memoizada da classe ApiService que persiste entre renderizações
   const api = useMemo(() => {
     return new ApiService();
   }, []);
 
-  // Efetua a limpeza do cache quando o refreshToken mudar
   useEffect(() => {
     if (refreshToken > 0) {
       api.clearAllCache();
     }
   }, [refreshToken, api]);
 
-  // Retorna a API com todas as funções + a função de invalidação de cache
   return {
     ...api,
     invalidateCache,
