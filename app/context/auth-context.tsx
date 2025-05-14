@@ -21,6 +21,7 @@ import {
   RegisterCredentials,
   GoogleAuthData,
 } from "../types/user";
+import { LoadingIcon } from "../components/loading-icon";
 
 interface AuthContextProps {
   user: User | null;
@@ -69,12 +70,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        console.log("Verificando autenticação com token:", idToken);
         const response = await axiosClient.get("/auth/me", {
           headers: { Authorization: `Bearer ${idToken}` },
         });
 
-        console.log("Resposta da API:", response.data);
         if (response.data.user) {
           setUser(response.data.user);
         } else {
@@ -122,8 +121,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           "/auth/google-login",
           googleData
         );
-
-        console.log("Resposta do login com Google:", response.data);
 
         if (response.status === 200 && response.data.user) {
           // Usar o token retornado pelo backend
@@ -174,8 +171,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password: credentials.password,
       });
 
-      console.log("Resposta do login com email:", response.data);
-
       if (response.status === 200) {
         // Usar o token retornado pelo backend
         localStorage.setItem("idToken", response.data.idToken);
@@ -209,8 +204,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password: credentials.password,
         name: credentials.name,
       });
-
-      console.log("Resposta do registro:", response.data);
 
       if (response.status === 201) {
         // Usar o token e firebaseUid retornados pelo backend
@@ -257,7 +250,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   if (!isInitialized) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+        <LoadingIcon />
       </div>
     );
   }

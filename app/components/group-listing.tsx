@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Music, Plus, Users, Calendar, Loader2 } from "lucide-react";
+import { Music, Plus, Users, Calendar } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
@@ -12,18 +12,99 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useApi } from "@/app/hooks/use-api";
 import { Group as TypeGroup } from "@/app/types/group";
+import { LoadingIcon } from "./loading-icon";
+import { toast } from "sonner";
+import { useAuth } from "../context/auth-context";
+
+interface GroupInfoProps extends TypeGroup {
+  stats: {
+    musicsCount: number;
+    setlistsCount: number;
+    membersCount: number;
+  };
+}
 
 export function GroupListing() {
   const [groups, setGroups] = useState<TypeGroup[] | []>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [groupsInfo, setGroupsInfo] = useState<{
+    [key: string]: GroupInfoProps;
+  }>({});
+  const { user } = useAuth();
+
   const api = useApi();
+  useEffect(() => {
+    api.clearGroupsCache();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchGroups = async () => {
       try {
         setIsLoading(true);
-        const data = await api.getAllGroups();
-        setGroups(data || []);
+
+        if (!user) {
+          toast.error("Usuário não encontrado");
+          return;
+        }
+
+        const response = await api.getGroupsByUserId(user.id);
+        const data = response
+          ? (response as Array<
+              TypeGroup | { groupId: string; group: TypeGroup }
+            >)
+          : [];
+
+        const groupsData = data.map((item) => {
+          if ("groupId" in item && "group" in item) {
+            return item.group;
+          }
+          return item as TypeGroup;
+        });
+
+        setGroups(groupsData);
+
+        if (groupsData.length > 0) {
+          const groupStats = await Promise.all(
+            groupsData.map(async (group) => {
+              try {
+                const stats = await api.getInfoGroup(group.id);
+
+                const formattedStats = {
+                  musicsCount: stats.stats?.musicsCount || 0,
+                  setlistsCount: stats.stats?.setlistsCount || 0,
+                  membersCount: stats.stats?.membersCount || 0,
+                };
+
+                return {
+                  ...group,
+                  stats: formattedStats,
+                };
+              } catch (err) {
+                toast.error(
+                  `Erro ao obter estatísticas do grupo ${group.id}: ${
+                    (err as Error).message
+                  }`
+                );
+                return {
+                  ...group,
+                  stats: {
+                    musicsCount: 0,
+                    setlistsCount: 0,
+                    membersCount: 0,
+                  },
+                };
+              }
+            })
+          );
+
+          const groupsInfoMap = groupStats.reduce((map, group) => {
+            map[group.id] = group;
+            return map;
+          }, {} as { [key: string]: GroupInfoProps });
+
+          setGroupsInfo(groupsInfoMap);
+        }
       } catch (error) {
         console.error("Erro ao carregar grupos:", error);
       } finally {
@@ -31,14 +112,16 @@ export function GroupListing() {
       }
     };
 
-    fetchGroups();
+    if (user) {
+      fetchGroups();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4 flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+        <LoadingIcon />
       </div>
     );
   }
@@ -84,7 +167,7 @@ export function GroupListing() {
               href={`/groups/${group.id}`}
               className="block group"
             >
-              <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-orange-200 group-hover:border-orange-200">
+              <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900 group-hover:border-orange-200">
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-4">
                     <div className="relative h-16 w-16 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center border-2 border-orange-200">
@@ -111,9 +194,10 @@ export function GroupListing() {
                 <CardContent className="pb-2">
                   <div className="grid grid-cols-3 gap-2 mt-4">
                     <div className="flex flex-col items-center p-2 bg-muted rounded-md">
+                      {" "}
                       <Music className="h-4 w-4 text-orange-500 mb-1" />
                       <span className="text-sm font-medium">
-                        {group.musics?.length || 0}
+                        {groupsInfo[group.id]?.stats.musicsCount || 0}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         Músicas
@@ -122,7 +206,7 @@ export function GroupListing() {
                     <div className="flex flex-col items-center p-2 bg-muted rounded-md">
                       <Calendar className="h-4 w-4 text-orange-500 mb-1" />
                       <span className="text-sm font-medium">
-                        {group.setlists?.length || 0}
+                        {groupsInfo[group.id]?.stats.setlistsCount || 0}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         Setlists
@@ -131,7 +215,7 @@ export function GroupListing() {
                     <div className="flex flex-col items-center p-2 bg-muted rounded-md">
                       <Users className="h-4 w-4 text-orange-500 mb-1" />
                       <span className="text-sm font-medium">
-                        {group.permissions?.length || 0}
+                        {groupsInfo[group.id]?.stats.membersCount || 0}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         Membros
@@ -142,7 +226,7 @@ export function GroupListing() {
                 <CardFooter className="pt-2">
                   <Button
                     variant="ghost"
-                    className="w-full text-orange-500 group-hover:bg-orange-50"
+                    className="w-full text-orange-500 group-hover:bg-orange-50 dark:group-hover:bg-orange-900"
                   >
                     Ver Grupo
                   </Button>

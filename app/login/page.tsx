@@ -84,7 +84,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
@@ -131,6 +131,7 @@ export default function LoginPage() {
                 type="password"
                 value={credentials.password}
                 onChange={handleChange}
+                placeholder="********"
                 name="password"
                 required
               />
@@ -147,7 +148,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">
+              <span className="bg-card px-2 text-gray-500">
                 Or continue with
               </span>
             </div>
@@ -182,7 +183,7 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="text-center">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"

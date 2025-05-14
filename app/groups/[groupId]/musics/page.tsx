@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronLeft, Plus, Search, Loader2 } from "lucide-react";
+import { ChevronLeft, Plus, Search } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { useApi } from "@/app/hooks/use-api";
 import { Group } from "@/app/types/group";
 import { Music } from "@/app/types/music";
+import { LoadingIcon } from "@/app/components/loading-icon";
 
 export default function SongsPage() {
   const params = useParams();
@@ -71,7 +72,7 @@ export default function SongsPage() {
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+        <LoadingIcon />
       </div>
     );
   }

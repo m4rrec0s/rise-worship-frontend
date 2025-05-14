@@ -5,7 +5,7 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, Search, Loader2 } from "lucide-react";
+import { ChevronLeft, ImageIcon, Search } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -27,9 +27,17 @@ import {
 import { useApi } from "@/app/hooks/use-api";
 import { Group } from "@/app/types/group";
 import { toast } from "sonner";
+import { AxiosError } from "axios";
+import { LoadingIcon } from "@/app/components/loading-icon";
+import Image from "next/image";
 
 interface SearchResult {
-  id: string;
+  title: string;
+  link: string;
+  snippet: string;
+}
+
+interface ExtractedData {
   title: string;
   author: string;
   lyrics: string;
@@ -48,7 +56,8 @@ export default function CreateMusicPage() {
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [selectedSong, setSelectedSong] = useState<SearchResult | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -83,59 +92,97 @@ export default function CreateMusicPage() {
   }, [groupId]);
 
   const handleSearch = async () => {
-    if (searchQuery.trim()) {
-      try {
-        setIsSearching(true);
-        setShowResults(true);
+    if (!searchQuery.trim()) {
+      toast.error("Por favor, digite algo para buscar");
+      return;
+    }
 
-        // Chame a API para buscar letras
-        const results = await api.searchLyrics(searchQuery);
+    try {
+      setIsSearching(true);
+      setShowResults(true);
+      setSearchResults([]);
+
+      const results = await api.searchLyrics(searchQuery);
+
+      if (Array.isArray(results) && results.length > 0) {
         setSearchResults(results);
-      } catch (error) {
-        console.error("Erro ao buscar letras:", error);
-        toast.error("Erro ao buscar letras de música");
+      } else {
+        toast.info("Nenhuma música encontrada com este termo");
         setSearchResults([]);
-      } finally {
-        setIsSearching(false);
       }
+    } catch (error) {
+      console.error("Erro ao buscar letras:", error);
+      toast.error("Erro ao buscar letras de música");
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
   };
 
   const handleExtractLyrics = async (url: string) => {
-    if (url) {
-      try {
-        const result = await api.extractLyrics(url);
-        if (result && result.lyrics) {
-          setFormData({
-            ...formData,
-            lyrics: result.lyrics,
-            title: result.title || formData.title,
-            author: result.artist || formData.author,
-          });
-          toast.success("Letra extraída com sucesso!");
-        }
-      } catch (error) {
-        console.error("Erro ao extrair letra:", error);
-        toast.error("Não foi possível extrair a letra desta URL");
+    if (!url || url.trim() === "") {
+      toast.error("Por favor, insira uma URL válida");
+      return;
+    }
+
+    try {
+      toast.info("Extraindo letra, por favor aguarde...");
+      const result = await api.extractLyrics(url);
+
+      if (result && result.lyrics) {
+        setFormData((current) => ({
+          ...current,
+          lyrics: result.lyrics,
+          title: result.title || current.title,
+          author: result.artist || current.author, // Usa o campo artist da resposta da API
+        }));
+        toast.success("Letra extraída com sucesso!");
+      } else {
+        toast.error(
+          "Não foi possível extrair a letra. O formato do site não é suportado."
+        );
       }
+    } catch (error) {
+      console.error("Erro ao extrair letra:", error);
+      toast.error("Não foi possível extrair a letra desta URL");
+    } finally {
+      // Limpar o campo após a tentativa de extração para evitar duplicações
+      setExtractUrl("");
     }
   };
 
-  const handleSelectSong = (song: SearchResult) => {
-    setSelectedSong(song);
-    setFormData({
-      ...formData,
-      title: song.title,
-      author: song.author,
-      lyrics: song.lyrics,
-    });
+  const handleSelectSong = async (song: SearchResult) => {
     setShowResults(false);
+
+    if (song.link) {
+      try {
+        toast.info("Obtendo letra completa, por favor aguarde...");
+        const extractedData: ExtractedData = await api.extractLyrics(song.link);
+        if (extractedData && extractedData.lyrics) {
+          setFormData((current) => ({
+            ...current,
+            lyrics: extractedData.lyrics,
+            title: extractedData.title || current.title,
+            author: extractedData.author || current.author,
+          }));
+          toast.success("Letra extraída com sucesso!");
+        } else {
+          toast.error("Não foi possível obter a letra completa desta música");
+        }
+      } catch (error) {
+        console.error("Erro ao extrair letra da música:", error);
+        toast.error("Não foi possível obter a letra completa desta música");
+      }
+    }
   };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+
+    // Sempre garantindo que temos um valor string (nunca undefined)
+    const safeValue = value ?? "";
 
     if (name.includes(".")) {
       // Para campos aninhados como links.youtube
@@ -149,14 +196,14 @@ export default function CreateMusicPage() {
           ...formData,
           [parent]: {
             ...parentValue,
-            [child]: value,
+            [child]: safeValue,
           },
         });
       }
     } else {
       setFormData({
         ...formData,
-        [name]: value,
+        [name]: safeValue,
       });
     }
   };
@@ -166,6 +213,37 @@ export default function CreateMusicPage() {
       ...formData,
       tone: value,
     });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Verifica se é uma imagem
+      if (!file.type.match("image.*")) {
+        toast.error("Por favor, selecione apenas arquivos de imagem");
+        return;
+      }
+
+      // Limitando o tamanho do arquivo para 5MB
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("A imagem deve ser menor que 5MB");
+        return;
+      }
+
+      setSelectedImage(file);
+
+      // Criar uma URL para preview da imagem
+      const imageUrl = URL.createObjectURL(file);
+      setPreviewImage(imageUrl);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    if (previewImage) {
+      URL.revokeObjectURL(previewImage);
+      setPreviewImage(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -187,38 +265,28 @@ export default function CreateMusicPage() {
         musicData.append("cipher", formData.cipher);
       }
 
-      // Adicionar links como JSON
-      musicData.append("links", JSON.stringify(formData.links));
-
-      // Extrair thumbnail do YouTube se houver link
-      if (formData.links.youtube) {
-        try {
-          const thumbnail = await api.getYoutubeThumbnail(
-            formData.links.youtube
-          );
-          if (thumbnail && thumbnail.url) {
-            musicData.append("thumbnail", thumbnail.url);
-          }
-        } catch (error) {
-          console.error("Erro ao obter thumbnail:", error);
-          // Continua mesmo sem thumbnail
-        }
+      if (selectedImage) {
+        musicData.append("image", selectedImage);
       }
 
-      // Enviar para a API
+      musicData.append("links", JSON.stringify(formData.links));
+
       await api.createMusic(groupId, musicData);
       toast.success("Música adicionada com sucesso!");
       router.push(`/groups/${groupId}`);
     } catch (error) {
-      console.error("Erro ao salvar música:", error);
-      toast.error("Erro ao adicionar música. Tente novamente.");
+      toast.error(
+        "Erro ao adicionar música. " +
+          ((error as AxiosError<{ error: string }>)?.response?.data?.error ||
+            "Tente novamente mais tarde.")
+      );
     }
   };
 
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+        <LoadingIcon />
       </div>
     );
   }
@@ -235,7 +303,7 @@ export default function CreateMusicPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 px-5">
       <div className="flex items-center gap-2 mb-8">
         <Button variant="ghost" size="icon" asChild>
           <Link href={`/groups/${groupId}`}>
@@ -272,11 +340,7 @@ export default function CreateMusicPage() {
               className="bg-orange-500 hover:bg-orange-600"
               disabled={isSearching}
             >
-              {isSearching ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                "Buscar"
-              )}
+              {isSearching ? <LoadingIcon /> : "Buscar"}
             </Button>
           </div>
 
@@ -302,7 +366,7 @@ export default function CreateMusicPage() {
             <div className="mt-4 border rounded-md divide-y">
               {isSearching ? (
                 <div className="p-8 flex justify-center">
-                  <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+                  <LoadingIcon />
                 </div>
               ) : searchResults.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground">
@@ -316,9 +380,17 @@ export default function CreateMusicPage() {
                     onClick={() => handleSelectSong(song)}
                   >
                     <div className="font-medium">{song.title}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {song.author}
+                    <div className="text-sm text-muted-foreground w-full truncate">
+                      {song.snippet || "Sem descrição disponível"}
                     </div>
+                    {song.link && (
+                      <Link
+                        href={song.link}
+                        className="text-xs mt-1 text-blue-400"
+                      >
+                        {song.link}
+                      </Link>
+                    )}
                   </div>
                 ))
               )}
@@ -402,11 +474,66 @@ export default function CreateMusicPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="image">Imagem da Música (Opcional)</Label>
+              <div className="flex flex-col items-center p-4 border-2 border-dashed rounded-md border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors">
+                {previewImage ? (
+                  <div className="flex flex-col items-center gap-3 w-full">
+                    <Image
+                      src={previewImage}
+                      alt="Preview"
+                      className="max-w-full max-h-48 object-contain rounded-md"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={handleRemoveImage}
+                      size="sm"
+                    >
+                      Remover imagem
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 w-full">
+                    <div className="w-full flex justify-center">
+                      {" "}
+                      <ImageIcon
+                        className="h-10 w-10 text-muted-foreground mb-2"
+                        // alt="Ícone de imagem"
+                      />
+                    </div>
+                    <Label
+                      htmlFor="imageInput"
+                      className="cursor-pointer text-center bg-muted/70 hover:bg-muted w-full py-2 rounded-md transition-colors"
+                    >
+                      Clique para selecionar uma imagem
+                    </Label>
+                    <input
+                      id="imageInput"
+                      name="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      aria-label="Upload de imagem"
+                      title="Selecione uma imagem para a música"
+                      className="hidden"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Formatos suportados: JPG, PNG, GIF. Tamanho máximo: 8MB
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Links</Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="youtube" className="text-xs">
-                    YouTube
+                    YouTube{""}
+                    <span className="text-muted-foreground">
+                      (será usada como imagem a thumbnail do vídeo)
+                    </span>
                   </Label>
                   <Input
                     id="youtube"

@@ -12,25 +12,26 @@ import {
 export function LandingPage() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)]">
+      {" "}
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden bg-gradient-to-b from-orange-50 to-white">
+      <section className="relative py-20 md:py-32 overflow-hidden bg-gradient-to-b from-orange-50/80 dark:from-orange-950/20 to-background">
         <div className="absolute inset-0 overflow-hidden">
           <div
             className="absolute left-1/2 top-0 -z-10 -translate-x-1/2 blur-3xl xl:-top-6"
             aria-hidden="true"
           >
             <div
-              className="aspect-[1155/678] w-[72.1875rem] bg-gradient-to-tr from-orange-200 to-orange-400 opacity-30"
+              className="aspect-[1155/678] w-[72.1875rem] bg-gradient-to-tr from-orange-200 to-orange-400 dark:from-orange-700/30 dark:to-orange-500/40 opacity-30"
               style={{
                 clipPath:
                   "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
               }}
             />
           </div>
-        </div>
+        </div>{" "}
         <div className="container mx-auto px-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 mb-6">
-            <Music className="h-8 w-8 text-orange-500" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30 mb-6">
+            <Music className="h-8 w-8 text-orange-500 dark:text-orange-400" />
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             Simplify Your Worship Team Management
@@ -43,22 +44,26 @@ export function LandingPage() {
             <Button
               asChild
               size="lg"
-              className="bg-orange-500 hover:bg-orange-600"
+              className="bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white"
             >
               <Link href="/register">
                 Get Started
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="dark:border-orange-800 dark:text-orange-100"
+            >
               <Link href="/login">Sign In</Link>
             </Button>
           </div>
         </div>
       </section>
-
       {/* Features Section */}
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">
@@ -68,13 +73,12 @@ export function LandingPage() {
               Designed specifically for worship leaders and teams to streamline
               organization and enhance collaboration.
             </p>
-          </div>
-
+          </div>{" "}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-orange-100">
+            <Card className="border-orange-100 dark:border-orange-900/50">
               <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-orange-100 flex items-center justify-center mb-2">
-                  <Music className="h-6 w-6 text-orange-500" />
+                <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2">
+                  <Music className="h-6 w-6 text-orange-500 dark:text-orange-400" />
                 </div>
                 <CardTitle>Song Management</CardTitle>
                 <CardDescription>
@@ -90,18 +94,17 @@ export function LandingPage() {
                     "Search by title or lyrics",
                   ].map((feature) => (
                     <li key={feature} className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-orange-500 mr-2" />
+                      <CheckCircle className="h-5 w-5 text-orange-500 dark:text-orange-400 mr-2" />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
-            </Card>
-
-            <Card className="border-orange-100">
+            </Card>{" "}
+            <Card className="border-orange-100 dark:border-orange-900/50">
               <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-orange-100 flex items-center justify-center mb-2">
-                  <Calendar className="h-6 w-6 text-orange-500" />
+                <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2">
+                  <Calendar className="h-6 w-6 text-orange-500 dark:text-orange-400" />
                 </div>
                 <CardTitle>Setlist Builder</CardTitle>
                 <CardDescription>
@@ -117,18 +120,17 @@ export function LandingPage() {
                     "Track song usage history",
                   ].map((feature) => (
                     <li key={feature} className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-orange-500 mr-2" />
+                      <CheckCircle className="h-5 w-5 text-orange-500 dark:text-orange-400 mr-2" />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
             </Card>
-
-            <Card className="border-orange-100">
+            <Card className="border-orange-100 dark:border-orange-900/50">
               <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-orange-100 flex items-center justify-center mb-2">
-                  <Users className="h-6 w-6 text-orange-500" />
+                <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2">
+                  <Users className="h-6 w-6 text-orange-500 dark:text-orange-400" />
                 </div>
                 <CardTitle>Team Collaboration</CardTitle>
                 <CardDescription>
@@ -144,7 +146,7 @@ export function LandingPage() {
                     "Real-time updates",
                   ].map((feature) => (
                     <li key={feature} className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-orange-500 mr-2" />
+                      <CheckCircle className="h-5 w-5 text-orange-500 dark:text-orange-400 mr-2" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -153,10 +155,9 @@ export function LandingPage() {
             </Card>
           </div>
         </div>
-      </section>
-
+      </section>{" "}
       {/* Testimonials Section */}
-      <section className="py-16 md:py-24 bg-orange-50">
+      <section className="py-16 md:py-24 bg-gradient-to-b from-background to-orange-300 dark:to-orange-950/20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">Loved by Worship Teams</h2>
@@ -187,7 +188,10 @@ export function LandingPage() {
                 role: "Worship Pastor, New Life Fellowship",
               },
             ].map((testimonial, index) => (
-              <Card key={index} className="bg-white">
+              <Card
+                key={index}
+                className="bg-background border-orange-100 dark:border-orange-900/50"
+              >
                 <CardContent className="pt-6">
                   <p className="mb-6 italic">{`"${testimonial.quote}"`}</p>
                   <div>
@@ -201,10 +205,9 @@ export function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
-
+      </section>{" "}
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Elevate Your Worship Ministry?
@@ -217,23 +220,27 @@ export function LandingPage() {
             <Button
               asChild
               size="lg"
-              className="bg-orange-500 hover:bg-orange-600"
+              className="bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white"
             >
               <Link href="/register">Create Free Account</Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="dark:border-orange-800 dark:text-orange-100"
+            >
               <Link href="/login">Sign In</Link>
             </Button>
           </div>
         </div>
       </section>
-
       {/* Footer */}
-      <footer className="py-8 bg-gray-50 border-t">
+      <footer className="py-8 bg-background border-t dark:border-orange-950/30">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
-              <Music className="h-6 w-6 text-orange-500 mr-2" />
+              <Music className="h-6 w-6 text-orange-500 dark:text-orange-400 mr-2" />
               <span className="font-bold">Rise Worship</span>
             </div>
             <div className="text-sm text-muted-foreground">

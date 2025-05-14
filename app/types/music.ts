@@ -20,7 +20,7 @@ export interface Music {
   createdAt: Date;
   updatedAt: Date;
 
-  group?: Group;
+  group?: Pick<Group, "id" | "name">;
   creator?: User;
   category?: Category;
   setlists?: SetlistMusic[];

@@ -25,13 +25,10 @@ import Image from "next/image";
 export function Navbar() {
   const { toggleSidebar } = useSidebar();
   const pathname = usePathname();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
 
   // Check if we're on an auth page
   const isAuthPage = pathname === "/login" || pathname === "/register";
-
-  const groupIdMatch = pathname.match(/\/groups\/([^/]+)/);
-  const groupId = groupIdMatch ? groupIdMatch[1] : null;
 
   if (isAuthPage) {
     return (
@@ -72,29 +69,10 @@ export function Navbar() {
         <div className="flex-1 flex items-center justify-center px-4 sm:px-0">
           <Input
             type="text"
-            placeholder="Search for groups, songs, or setlists..."
-            className="hidden sm:block w-full max-w-md"
+            placeholder="Search for groups..."
+            className="w-full max-w-md"
           />
         </div>
-
-        {groupId && (
-          <nav className="flex-1 flex items-center">
-            <div className="flex space-x-1">
-              <Button variant="ghost" asChild className="text-sm">
-                <Link href={`/groups/${groupId}`}>Overview</Link>
-              </Button>
-              <Button variant="ghost" asChild className="text-sm">
-                <Link href={`/groups/${groupId}/musics`}>Songs</Link>
-              </Button>
-              <Button variant="ghost" asChild className="text-sm">
-                <Link href={`/groups/${groupId}/setlists`}>Setlists</Link>
-              </Button>
-              <Button variant="ghost" asChild className="text-sm">
-                <Link href={`/groups/${groupId}/members`}>Members</Link>
-              </Button>
-            </div>
-          </nav>
-        )}
 
         <div className="ml-auto flex items-center gap-2">
           {isAuthenticated ? (
@@ -102,7 +80,12 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-9 w-9 border p-0.5">
-                    <AvatarImage src={user?.imageUrl} alt="User" />
+                    <AvatarImage
+                      src={user?.imageUrl}
+                      alt="User"
+                      className="object-cover"
+                      sizes="36px"
+                    />
                     <AvatarFallback>
                       <Image
                         src="/placeholder-user.png"
@@ -132,11 +115,9 @@ export function Navbar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </Link>
+                <DropdownMenuItem onClick={() => logout()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

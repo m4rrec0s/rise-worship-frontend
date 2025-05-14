@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="pt-BR">
+      <body className={`${inter.className} dark`}>
         {/* <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange> */}
         <AuthProvider>
           <SidebarProvider defaultOpen={false}>
@@ -31,7 +31,9 @@ export default function RootLayout({
               <Navbar />
               <div className="flex flex-1 overflow-hidden">
                 <AppSidebar />
-                <main className="flex-1 overflow-auto">{children}</main>
+                <main className="flex-1 overflow-auto" id="scrollableMain">
+                  {children}
+                </main>
               </div>
             </div>
             <Toaster />

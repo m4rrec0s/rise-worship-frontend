@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Music, Plus, List, Users, Loader2 } from "lucide-react";
+import {
+  Music,
+  Plus,
+  List,
+  Users,
+  ChevronRight,
+  Search,
+  MoreVerticalIcon,
+  Edit,
+} from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
   Tabs,
@@ -11,6 +20,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import {
   Card,
   CardContent,
@@ -29,6 +45,20 @@ import { Group } from "@/app/types/group";
 import { Music as MusicType } from "@/app/types/music";
 import { Setlist } from "@/app/types/setlist";
 import { User } from "@/app/types/user";
+import { LoadingIcon } from "@/app/components/loading-icon";
+import { useAuth } from "@/app/context/auth-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import MusicList from "@/app/components/musics/music-list";
+import SetListLits from "@/app/components/setlist/setlist-list";
+import SetListList from "@/app/components/setlist/setlist-list";
 
 interface MemberData {
   id: string;
@@ -38,7 +68,6 @@ interface MemberData {
 
 export default function GroupPage() {
   const params = useParams();
-  // const router = useRouter();
   const api = useApi();
   const groupId = params.groupId as string;
 
@@ -47,47 +76,152 @@ export default function GroupPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [musics, setMusics] = useState<MusicType[]>([]);
   const [setlists, setSetlists] = useState<Setlist[]>([]);
-  const [members, setMembers] = useState<User[]>([]);
+  const [members, setMembers] = useState<MemberData[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [updatingPermission, setUpdatingPermission] = useState<string | null>(
+    null
+  );
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [permission, setPermission] = useState("view");
 
   useEffect(() => {
-    const fetchGroupData = async () => {
+    const fetchGroup = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
+        const response = await api.getGroupById(groupId);
+        if (!response) {
+          toast.error("Grupo não encontrado");
+          return;
+        }
+        setGroup(response);
 
-        // Buscar dados do grupo
-        const groupData = await api.getGroupById(groupId);
-        setGroup(groupData);
+        const membersResponse = await api.getGroupMembers(groupId);
+        setMembers(membersResponse);
 
-        // Buscar músicas do grupo
-        const musicsData = await api.getAllMusicsByGroup(groupId);
-        setMusics(musicsData);
+        const setlistsResponse = await api.getSetListsByGroup(groupId);
+        setSetlists(setlistsResponse);
 
-        // Buscar setlists do grupo
-        const setlistsData = await api.getSetListsByGroup(groupId);
-        setSetlists(setlistsData);
-
-        // Buscar membros do grupo e extrair os dados do usuário
-        const membersData = await api.getGroupMembers(groupId);
-        // A API retorna um array de permissões com o usuário aninhado, então extraímos os objetos de usuário
-        const extractedUsers = membersData.map(
-          (member: MemberData) => member.user
+        const isUserAdmin = membersResponse.some(
+          (member: MemberData) =>
+            member.user.id === user?.id && member.permission === "admin"
         );
-        setMembers(extractedUsers);
+        setIsAdmin(isUserAdmin);
+
+        const permissionFound = membersResponse.find(
+          (member: MemberData) => member.user.id === user?.id
+        );
+        if (permissionFound) {
+          setPermission(permissionFound.permission);
+        }
       } catch (error) {
-        console.error("Erro ao carregar dados do grupo:", error);
+        console.error("Erro ao carregar grupo:", error);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchGroupData();
+    fetchGroup();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId]);
+  }, [groupId, user?.id]);
+
+  const loadMusics = useCallback(
+    async (page: number, perPage: number, search: string) => {
+      try {
+        const response = await api.getMusicsByGroupPaginated(
+          groupId,
+          page,
+          perPage,
+          search
+        );
+        setHasMore(response.pagination.hasNext);
+        setMusics((prevMusics) => {
+          const newMusics = response.data.filter(
+            (newMusic: MusicType) =>
+              !prevMusics.some((music) => music.id === newMusic.id)
+          );
+          return [...prevMusics, ...newMusics];
+        });
+      } catch (error) {
+        console.error("Erro ao carregar músicas:", error);
+        toast.error("Erro ao carregar músicas");
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [groupId]
+  );
+
+  useEffect(() => {
+    setMusics([]);
+    console.log("Carregando primeira página com busca:", searchQuery);
+    loadMusics(1, 5, searchQuery);
+  }, [loadMusics, searchQuery]);
+
+  const loadMore = () => {
+    if (hasMore) {
+      const nextPage = page + 1;
+      console.log("Carregando mais músicas para a página:", nextPage);
+      loadMusics(nextPage, 5, searchQuery);
+      setPage(nextPage);
+    }
+  };
+
+  const updateSearchQuery = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+    setHasMore(true);
+    setMusics([]);
+    loadMusics(1, 5, query);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setPage(1);
+    setHasMore(true);
+    setMusics([]);
+    loadMusics(1, 5, "");
+  };
+
+  // permissão
+  const handlePermissionChange = async (
+    userId: string,
+    newPermission: string
+  ) => {
+    try {
+      setUpdatingPermission(userId);
+      await api.updateUserPermission(groupId, userId, newPermission);
+
+      setMembers((prevMembers) =>
+        prevMembers.map((member) =>
+          member.user.id === userId
+            ? { ...member, permission: newPermission }
+            : member
+        )
+      );
+    } catch (error) {
+      console.error("Erro ao atualizar permissão:", error);
+    } finally {
+      setUpdatingPermission(null);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    try {
+      await api.removeUserFromGroup(groupId, userId);
+      setMembers((prevMembers) =>
+        prevMembers.filter((member) => member.user.id !== userId)
+      );
+      toast.success("Membro removido com sucesso!");
+    } catch (error) {
+      console.error("Erro ao remover membro:", error);
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+        <LoadingIcon size={45} />
       </div>
     );
   }
@@ -104,18 +238,33 @@ export default function GroupPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="h-16 w-16 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center">
-          <Image
-            src={group.imageUrl || "/placeholder-groups.png"}
-            alt={group.name}
-            width={64}
-            height={64}
-            className="h-full w-full object-cover"
-          />
+    <div className="container mx-auto py-8 px-5">
+      <div className="flex items-center justify-between mb-8 w-full">
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center">
+            <Image
+              src={group.imageUrl || "/placeholder-groups.png"}
+              alt={group.name}
+              width={64}
+              height={64}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold">{group.name}</h1>
+            <p className="truncate w-full text-zinc-600">{group.description}</p>
+          </div>
         </div>
-        <h1 className="text-3xl font-bold">{group.name}</h1>
+        {user && isAdmin ? (
+          <div className="flex items-center gap-4">
+            <Button asChild variant="outline">
+              <Link href={`/groups/${groupId}/edit`}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar Grupo
+              </Link>
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -132,134 +281,24 @@ export default function GroupPage() {
             <Users className="h-4 w-4" />
             Membros
           </TabsTrigger>
-        </TabsList>
-
+        </TabsList>{" "}
         <TabsContent value="songs">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold">Músicas</h2>
-            <Button asChild className="bg-orange-500 hover:bg-orange-600">
-              <Link href={`/groups/${groupId}/create-music`}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Música
-              </Link>
-            </Button>
-          </div>
-          {musics.length === 0 ? (
-            <Card className="bg-muted/40">
-              <CardContent className="py-8 text-center">
-                <h3 className="text-lg font-medium mb-2">
-                  Nenhuma música encontrada
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Comece adicionando músicas ao seu grupo de louvor.
-                </p>
-                <Button asChild className="bg-orange-500 hover:bg-orange-600">
-                  <Link href={`/groups/${groupId}/create-music`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Primeira Música
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {musics.slice(0, 5).map((song) => (
-                <Card
-                  key={song.id}
-                  className="hover:shadow-md transition-shadow"
-                >
-                  <CardHeader className="py-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <CardTitle className="text-lg">{song.title}</CardTitle>
-                        <CardDescription>{song.author}</CardDescription>
-                      </div>
-                      <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-sm font-medium">
-                        Tom: {song.tone}
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          )}
-          {musics.length > 5 && (
-            <div className="mt-4 text-center">
-              <Button variant="outline" asChild>
-                <Link href={`/groups/${groupId}/musics`}>
-                  Ver Todas as Músicas
-                </Link>
-              </Button>
-            </div>
-          )}
+          {" "}
+          <MusicList
+            clearSearch={clearSearch}
+            groupId={groupId}
+            musics={musics}
+            isLoading={isLoading}
+            searchQuery={searchQuery}
+            setSearchQuery={updateSearchQuery}
+            permission={permission}
+            hasMore={hasMore}
+            loadMore={loadMore}
+          />
         </TabsContent>
-
         <TabsContent value="setlists">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold">Setlists</h2>
-            <Button asChild className="bg-orange-500 hover:bg-orange-600">
-              <Link href={`/groups/${groupId}/create-setlist`}>
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Setlist
-              </Link>
-            </Button>
-          </div>
-          {setlists.length === 0 ? (
-            <Card className="bg-muted/40">
-              <CardContent className="py-8 text-center">
-                <h3 className="text-lg font-medium mb-2">
-                  Nenhuma setlist encontrada
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Comece criando uma setlist para seu próximo culto.
-                </p>
-                <Button asChild className="bg-orange-500 hover:bg-orange-600">
-                  <Link href={`/groups/${groupId}/create-setlist`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Criar Primeira Setlist
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {setlists.slice(0, 3).map((setlist) => (
-                <Card
-                  key={setlist.id}
-                  className="hover:shadow-md transition-shadow"
-                >
-                  <CardHeader className="py-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <CardTitle className="text-lg">
-                          {setlist.title}
-                        </CardTitle>
-                        <CardDescription>
-                          {new Date(setlist.createdAt).toLocaleDateString(
-                            "pt-BR"
-                          )}
-                        </CardDescription>
-                      </div>
-                      <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-sm font-medium">
-                        {setlist.musics?.length || 0} músicas
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          )}
-          {setlists.length > 3 && (
-            <div className="mt-4 text-center">
-              <Button variant="outline" asChild>
-                <Link href={`/groups/${groupId}/setlists`}>
-                  Ver Todas as Setlists
-                </Link>
-              </Button>
-            </div>
-          )}
+          <SetListList groupId={groupId} setlists={setlists} />
         </TabsContent>
-
         <TabsContent value="members">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Membros</h2>
@@ -294,22 +333,76 @@ export default function GroupPage() {
                   key={member.id}
                   className="hover:shadow-md transition-shadow"
                 >
-                  <CardContent className="py-4 flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage
-                        src={member.imageUrl || "/placeholder-user.png"}
-                        alt={member.name}
-                      />
-                      <AvatarFallback>
-                        {member.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-medium">{member.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {member.email}
-                      </p>
+                  <CardContent className="py-4 flex items-center justify-between">
+                    {" "}
+                    <div className="flex items-center gap-4">
+                      <Avatar>
+                        <AvatarImage
+                          src={member.user.imageUrl || "/placeholder-user.png"}
+                          alt={member.user.name}
+                        />
+                        <AvatarFallback>
+                          {member.user.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-medium text-sm">
+                          {member.user.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {member.user.email}
+                        </p>
+                      </div>
                     </div>
+                    {user &&
+                    members.find((m) => m.user.id === user.id)?.permission ===
+                      "admin" &&
+                    member.user.id !== user.id ? (
+                      <>
+                        {" "}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVerticalIcon className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-white">
+                            <DropdownMenuLabel>Mais Opções</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="cursor-pointer text-red-500 text-xs flex items-center hover:bg-red-100"
+                              onClick={() => handleRemoveMember(member.user.id)}
+                            >
+                              <Users className="mr-2 h-4 w-4 text-red-500" />
+                              <span>Remover Membro</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-xs flex items-center">
+                              <Select
+                                onValueChange={(value) =>
+                                  handlePermissionChange(member.user.id, value)
+                                }
+                              >
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue
+                                    placeholder={member.permission}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="view">
+                                    Vizualizar
+                                  </SelectItem>
+                                  <SelectItem value="edit">Editar</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    ) : (
+                      <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-sm font-medium">
+                        {member.permission}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
