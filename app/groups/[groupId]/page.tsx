@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Music,
   Plus,
@@ -12,6 +12,9 @@ import {
   Search,
   MoreVerticalIcon,
   Edit,
+  Eye,
+  Crown,
+  DoorOpen,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -59,6 +62,14 @@ import { toast } from "sonner";
 import MusicList from "@/app/components/musics/music-list";
 import SetListLits from "@/app/components/setlist/setlist-list";
 import SetListList from "@/app/components/setlist/setlist-list";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/app/components/ui/alert-dialog";
 
 interface MemberData {
   id: string;
@@ -70,6 +81,7 @@ export default function GroupPage() {
   const params = useParams();
   const api = useApi();
   const groupId = params.groupId as string;
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("songs");
   const [isLoading, setIsLoading] = useState(true);
@@ -217,6 +229,24 @@ export default function GroupPage() {
       console.error("Erro ao remover membro:", error);
     }
   };
+  // Estado para controlar a visibilidade do modal
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+
+  const confirmLeaveGroup = async () => {
+    try {
+      await api.leaveGroup(groupId);
+      setMembers((prevMembers) =>
+        prevMembers.filter((member) => member.user.id !== user?.id)
+      );
+      api.clearGroupsCache();
+      toast.success("Você saiu do grupo com sucesso!");
+      router.push("/");
+      setShowLeaveDialog(false);
+    } catch (error) {
+      console.error("Erro ao sair do grupo:", error);
+      toast.error("Erro ao sair do grupo");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -302,12 +332,6 @@ export default function GroupPage() {
         <TabsContent value="members">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Membros</h2>
-            <Button asChild className="bg-orange-500 hover:bg-orange-600">
-              <Link href={`/groups/${groupId}/invite`}>
-                <Plus className="mr-2 h-4 w-4" />
-                Convidar Membro
-              </Link>
-            </Button>
           </div>
           {members.length === 0 ? (
             <Card className="bg-muted/40">
@@ -318,94 +342,130 @@ export default function GroupPage() {
                 <p className="text-muted-foreground mb-4">
                   Convide membros para participar do seu grupo de louvor.
                 </p>
-                <Button asChild className="bg-orange-500 hover:bg-orange-600">
-                  <Link href={`/groups/${groupId}/invite`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Convidar Membros
-                  </Link>
-                </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
+            <div className="flex flex-col gap-2">
               {members.map((member) => (
-                <Card
+                <div
                   key={member.id}
-                  className="hover:shadow-md transition-shadow"
+                  className="flex items-center justify-between px-4 py-3 rounded-md border hover:shadow transition-shadow"
                 >
-                  <CardContent className="py-4 flex items-center justify-between">
-                    {" "}
-                    <div className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage
-                          src={member.user.imageUrl || "/placeholder-user.png"}
-                          alt={member.user.name}
-                        />
-                        <AvatarFallback>
-                          {member.user.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-medium text-sm">
-                          {member.user.name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          {member.user.email}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-4">
+                    <Avatar>
+                      <AvatarImage
+                        src={member.user.imageUrl || "/placeholder-user.png"}
+                        alt={member.user.name}
+                      />
+                      <AvatarFallback>
+                        {member.user.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-medium text-sm">
+                        {member.user.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {member.user.email}
+                      </p>
                     </div>
-                    {user &&
-                    members.find((m) => m.user.id === user.id)?.permission ===
-                      "admin" &&
-                    member.user.id !== user.id ? (
-                      <>
-                        {" "}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVerticalIcon className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-white">
-                            <DropdownMenuLabel>Mais Opções</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="cursor-pointer text-red-500 text-xs flex items-center hover:bg-red-100"
-                              onClick={() => handleRemoveMember(member.user.id)}
-                            >
-                              <Users className="mr-2 h-4 w-4 text-red-500" />
-                              <span>Remover Membro</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer text-xs flex items-center">
-                              <Select
-                                onValueChange={(value) =>
-                                  handlePermissionChange(member.user.id, value)
-                                }
-                              >
-                                <SelectTrigger className="w-[180px]">
-                                  <SelectValue
-                                    placeholder={member.permission}
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="view">
-                                    Vizualizar
-                                  </SelectItem>
-                                  <SelectItem value="edit">Editar</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </>
-                    ) : (
-                      <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-sm font-medium">
-                        {member.permission}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  </div>
+                  {user &&
+                  members.find((m) => m.user.id === user.id)?.permission ===
+                    "admin" &&
+                  member.user.id !== user.id ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVerticalIcon className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-white">
+                        <DropdownMenuLabel>Mais Opções</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="cursor-pointer text-red-500 text-xs flex items-center hover:bg-red-100"
+                          onClick={() => handleRemoveMember(member.user.id)}
+                        >
+                          <Users className="mr-2 h-4 w-4 text-red-500" />
+                          <span>Remover Membro</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer text-xs flex items-center">
+                          <Select
+                            onValueChange={(value) =>
+                              handlePermissionChange(member.user.id, value)
+                            }
+                            value={member.permission}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder={member.permission} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="view">Vizualizar</SelectItem>
+                              <SelectItem value="edit">Editar</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <div className="flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium">
+                      {member.permission === "admin" && (
+                        <Crown className="h-4 w-4 text-orange-500" />
+                      )}
+                      {member.permission === "edit" && (
+                        <Edit className="h-4 w-4 text-orange-500" />
+                      )}
+                      {member.permission === "view" && (
+                        <Eye className="h-4 w-4 text-orange-500" />
+                      )}
+                    </div>
+                  )}
+                </div>
               ))}
+              <Button asChild variant={"ghost"}>
+                <Link
+                  href={`/groups/${groupId}/invite`}
+                  className="w-full px-4 py-7 rounded-md border hover:shadow transition-shadow"
+                >
+                  <Plus className="h-4 w-4" />
+                  Convidar Membros
+                </Link>
+              </Button>{" "}
+              <AlertDialog
+                open={showLeaveDialog}
+                onOpenChange={setShowLeaveDialog}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant={"ghost"}
+                    className="w-full px-4 py-7 rounded-md border hover:shadow transition-shadow text-red-400"
+                  >
+                    <DoorOpen className="h-4 w-4" />
+                    Sair do Grupo
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Você realmente deseja sair deste grupo? Você não poderá mais
+                    acessar as músicas e setlists.
+                  </AlertDialogDescription>{" "}
+                  <div className="flex justify-end gap-2 mt-4">
+                    <AlertDialogAction asChild>
+                      <Button variant="destructive" onClick={confirmLeaveGroup}>
+                        Sair
+                      </Button>
+                    </AlertDialogAction>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowLeaveDialog(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </TabsContent>

@@ -149,6 +149,13 @@ class ApiService {
     return response.data;
   };
 
+  checkUserMembership = async (groupId: string) => {
+    const response = await axiosClient.get(
+      `/groups/${groupId}/check-membership`
+    );
+    return response.data;
+  };
+
   updateUserPermission = async (
     groupId: string,
     userId: string,
@@ -173,10 +180,8 @@ class ApiService {
     return response.data;
   };
 
-  joinGroupByInvite = async (groupId: string, inviteCode: string) => {
-    const response = await axiosClient.post(`/groups/${groupId}/join`, {
-      inviteCode,
-    });
+  joinGroup = async (groupId: string) => {
+    const response = await axiosClient.post(`/groups/${groupId}/join`);
     this.clearCache("groups");
     return response.data;
   };
@@ -199,9 +204,9 @@ class ApiService {
   };
 
   removeUserFromGroup = async (groupId: string, userId: string) => {
-    const response = await axiosClient.delete(
-      `/groups/${groupId}/members/${userId}`
-    );
+    const response = await axiosClient.delete(`/groups/${groupId}/members/`, {
+      data: { userId },
+    });
 
     this.clearCache(`group_members_${groupId}`);
     return response.data;

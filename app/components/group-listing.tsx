@@ -130,14 +130,11 @@ export function GroupListing() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Seus Grupos de Louvor</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie seus grupos de louvor, músicas e setlists
-          </p>
+          <h1 className="text-3xl font-bold">Seus grupos</h1>
         </div>
         <Button asChild className="bg-orange-500 hover:bg-orange-600">
-          <Link href="/create-group">
-            <Plus className="mr-2 h-4 w-4" />
+          <Link href="/create-group" className="text-xs">
+            <Plus className="h-4 w-4" />
             Criar Novo Grupo
           </Link>
         </Button>
@@ -145,19 +142,13 @@ export function GroupListing() {
 
       {groups.length === 0 ? (
         <div className="text-center py-12">
-          <h2 className="text-xl font-semibold mb-2">
+          <h2 className="text-base font-semibold mb-2">
             Nenhum grupo encontrado
           </h2>
-          <p className="text-muted-foreground mb-6">
-            Você ainda não participa de nenhum grupo. Crie um novo grupo para
-            começar!
+          <p className="text-muted-foreground mb-6 text-sm">
+            Você ainda não participa de nenhum grupo. Pesquise por grupos
+            existentes ou crie um novo grupo de louvor.
           </p>
-          <Button asChild className="bg-orange-500 hover:bg-orange-600">
-            <Link href="/create-group">
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Novo Grupo
-            </Link>
-          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
