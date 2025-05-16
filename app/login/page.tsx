@@ -105,7 +105,7 @@ export default function LoginPage() {
           )}
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email</Label>{" "}
               <Input
                 id="email"
                 type="email"
@@ -113,6 +113,7 @@ export default function LoginPage() {
                 value={credentials.email}
                 onChange={handleChange}
                 name="email"
+                autoComplete="username"
                 required
               />
             </div>
@@ -125,7 +126,7 @@ export default function LoginPage() {
                 >
                   Forgot password?
                 </Link>
-              </div>
+              </div>{" "}
               <Input
                 id="password"
                 type="password"
@@ -133,6 +134,7 @@ export default function LoginPage() {
                 onChange={handleChange}
                 placeholder="********"
                 name="password"
+                autoComplete="current-password"
                 required
               />
             </div>

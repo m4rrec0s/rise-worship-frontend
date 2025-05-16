@@ -12,11 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/app/components/ui/avatar";
+
 import { useSidebar } from "@/app/components/ui/sidebar";
 import { Input } from "./ui/input";
 import { useAuth } from "../context/auth-context";
@@ -29,7 +25,6 @@ export function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const [inputValue, setInputValue] = useState("");
 
-  // Check if we're on an auth page
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -138,24 +133,29 @@ export function Navbar() {
                     size="icon"
                     className="rounded-full border-2 border-orange-500"
                   >
-                    <Avatar className="h-9 w-9 border p-0.5">
-                      <AvatarImage
-                        src={user?.imageUrl}
-                        alt="User"
-                        className="rounded-full object-cover w-full"
-                      />
-                      <AvatarFallback>
+                    <div className="relative h-9 w-9 border p-0.5 rounded-full bg-orange-500">
+                      {user?.imageUrl ? (
+                        <Image
+                          src={user?.imageUrl}
+                          alt="User"
+                          className="rounded-full"
+                          fill
+                          style={{ objectFit: "cover" }}
+                          priority
+                        />
+                      ) : (
                         <div className="relative w-full h-full">
                           <Image
                             src="/placeholder-user.png"
                             alt="User"
                             fill
                             style={{ objectFit: "cover" }}
+                            className="rounded-full"
                             priority
                           />
                         </div>
-                      </AvatarFallback>
-                    </Avatar>
+                      )}
+                    </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

@@ -90,18 +90,17 @@ const MusicList = ({
               <span className="sr-only">Limpar</span>
               <span className="text-lg">×</span>
             </Button>
-          )}
+          )}{" "}
         </form>
 
-        {permission === "admin" ||
-          (permission === "edit" && (
-            <Button asChild className="bg-orange-500 hover:bg-orange-600">
-              <Link href={`/groups/${groupId}/create-music`}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Música
-              </Link>
-            </Button>
-          ))}
+        {(permission === "admin" || permission === "edit") && (
+          <Button asChild className="bg-orange-500 hover:bg-orange-600">
+            <Link href={`/groups/${groupId}/create-music`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar Música
+            </Link>
+          </Button>
+        )}
       </div>
       {musics.length === 0 ? (
         <Card className="bg-muted/40">
@@ -116,18 +115,20 @@ const MusicList = ({
               {!isLoading && searchQuery
                 ? `Não foi encontrada nenhuma música com "${searchQuery}".`
                 : "Comece adicionando músicas ao seu grupo de louvor."}
-            </p>
+            </p>{" "}
             {!isLoading && searchQuery ? (
               <Button variant="outline" onClick={handleClearSearch}>
                 Limpar Busca
               </Button>
             ) : (
-              <Button asChild className="bg-orange-500 hover:bg-orange-600">
-                <Link href={`/groups/${groupId}/create-music`}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Primeira Música
-                </Link>
-              </Button>
+              (permission === "admin" || permission === "edit") && (
+                <Button asChild className="bg-orange-500 hover:bg-orange-600">
+                  <Link href={`/groups/${groupId}/create-music`}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Primeira Música
+                  </Link>
+                </Button>
+              )
             )}
           </CardContent>
         </Card>

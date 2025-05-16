@@ -108,7 +108,7 @@ const GroupCard = ({ group }: GroupCardProps) => {
           </div>
           <CardHeader className="p-4">
             <CardTitle>{group.name}</CardTitle>
-            <CardDescription className="line-clamp-2">
+            <CardDescription className="text-sm text-muted-foreground truncate">
               {group.description}
             </CardDescription>
           </CardHeader>

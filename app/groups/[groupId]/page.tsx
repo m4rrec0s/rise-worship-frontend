@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -8,8 +8,6 @@ import {
   Plus,
   List,
   Users,
-  ChevronRight,
-  Search,
   MoreVerticalIcon,
   Edit,
   Eye,
@@ -30,18 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/app/components/ui/avatar";
+import { Card, CardContent } from "@/app/components/ui/card";
 import Image from "next/image";
 import { useApi } from "@/app/hooks/use-api";
 import { Group } from "@/app/types/group";
@@ -60,7 +47,6 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import MusicList from "@/app/components/musics/music-list";
-import SetListLits from "@/app/components/setlist/setlist-list";
 import SetListList from "@/app/components/setlist/setlist-list";
 import {
   AlertDialog,
@@ -97,8 +83,7 @@ export default function GroupPage() {
   const [hasMore, setHasMore] = useState(true);
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [permission, setPermission] = useState("view");
-
+  const [permission, setPermission] = useState("");
   useEffect(() => {
     const fetchGroup = async () => {
       setIsLoading(true);
@@ -126,7 +111,8 @@ export default function GroupPage() {
           (member: MemberData) => member.user.id === user?.id
         );
         if (permissionFound) {
-          setPermission(permissionFound.permission);
+          const userPermission = permissionFound.permission;
+          setPermission(userPermission);
         }
       } catch (error) {
         console.error("Erro ao carregar grupo:", error);
@@ -269,9 +255,9 @@ export default function GroupPage() {
 
   return (
     <div className="container mx-auto py-8 px-5">
-      <div className="flex items-center justify-between mb-8 w-full">
-        <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 w-full gap-6">
+        <div className="flex items-start gap-4 flex-1 min-w-0">
+          <div className="h-16 w-16 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center shrink-0">
             <Image
               src={group.imageUrl || "/placeholder-groups.png"}
               alt={group.name}
@@ -280,13 +266,15 @@ export default function GroupPage() {
               className="h-full w-full object-cover"
             />
           </div>
-          <div>
+          <div className="flex flex-col min-w-0">
             <h1 className="text-3xl font-bold">{group.name}</h1>
-            <p className="truncate w-full text-zinc-600">{group.description}</p>
+            <p className="line-clamp-2 text-zinc-600 break-words max-w-full md:max-w-[420px]">
+              {group.description}
+            </p>
           </div>
         </div>
         {user && isAdmin ? (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mt-4 md:mt-0 shrink-0">
             <Button asChild variant="outline">
               <Link href={`/groups/${groupId}/edit`}>
                 <Edit className="mr-2 h-4 w-4" />
@@ -352,15 +340,29 @@ export default function GroupPage() {
                   className="flex items-center justify-between px-4 py-3 rounded-md border hover:shadow transition-shadow"
                 >
                   <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage
-                        src={member.user.imageUrl || "/placeholder-user.png"}
-                        alt={member.user.name}
-                      />
-                      <AvatarFallback>
-                        {member.user.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative h-9 w-9 border rounded-full">
+                      {member?.user.imageUrl ? (
+                        <Image
+                          src={member?.user.imageUrl}
+                          alt="User"
+                          className="rounded-full"
+                          fill
+                          style={{ objectFit: "cover" }}
+                          priority
+                        />
+                      ) : (
+                        <div className="relative w-full h-full">
+                          <Image
+                            src="/placeholder-user.png"
+                            alt="User"
+                            className="rounded-full"
+                            fill
+                            style={{ objectFit: "cover" }}
+                            priority
+                          />
+                        </div>
+                      )}
+                    </div>
                     <div>
                       <h3 className="font-medium text-sm">
                         {member.user.name}
