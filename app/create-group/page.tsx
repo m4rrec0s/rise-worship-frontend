@@ -7,7 +7,7 @@ import useApi from "../hooks/use-api";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import Image from "next/image";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, ChevronLeft, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -103,8 +103,9 @@ const CreateGroupPage = () => {
 
   return (
     <section className="py-8 bg-background">
-      <div className="w-full">
-        <Button onClick={handleBack} className="mb-4">
+      <div className="w-full px-5">
+        <Button onClick={handleBack} variant={"ghost"} className="mb-4">
+          <ChevronLeft className="h-4 w-4 mr-2" />
           Voltar
         </Button>
       </div>
@@ -134,7 +135,9 @@ const CreateGroupPage = () => {
                 Alterar foto
               </div>
             </div>
-            <p className="text-sm text-gray-500 mb-1">Adicionar foto de capa</p>{" "}
+            <p className="text-sm text-gray-500 dark:text-gray-200 mb-1">
+              Adicionar foto de capa
+            </p>{" "}
             <input
               type="file"
               ref={fileInputRef}
@@ -150,7 +153,7 @@ const CreateGroupPage = () => {
           <div className="mb-4">
             <Label
               htmlFor="name"
-              className="text-sm font-medium text-gray-700 mb-1 block"
+              className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 block"
             >
               Nome do Grupo
             </Label>
@@ -169,7 +172,7 @@ const CreateGroupPage = () => {
           <div className="mb-6">
             <Label
               htmlFor="description"
-              className="text-sm font-medium text-gray-700 mb-1 block"
+              className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 block"
             >
               Descrição
             </Label>

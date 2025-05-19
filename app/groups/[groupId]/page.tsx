@@ -382,7 +382,7 @@ export default function GroupPage() {
                           <MoreVerticalIcon className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-white">
+                      <DropdownMenuContent align="end" className="">
                         <DropdownMenuLabel>Mais Opções</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

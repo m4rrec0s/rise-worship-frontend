@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, Settings, LoaderCircle } from "lucide-react";
+import { Plus, Settings, LoaderCircle, Music, Github } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -17,11 +17,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/app/components/ui/sidebar";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/app/components/ui/avatar";
+import Image from "next/image";
 import { Input } from "@/app/components/ui/input";
 import { useApi } from "@/app/hooks/use-api";
 import { useAuth } from "@/app/context/auth-context";
@@ -67,7 +63,7 @@ export function AppSidebar() {
       fetchGroups();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   if (pathname === "/login" || pathname === "/register") {
     return null;
@@ -79,6 +75,11 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r">
       <SidebarHeader className="px-4 py-3">
+        <Link href={"/"} className="flex items-center sm:hidden mt-2">
+          <Music className="h-8 w-8 text-orange-500" />
+          <span className="text-lg font-bold ml-2">Rise Worship</span>
+        </Link>
+
         <div className="mt-4">
           <Input
             placeholder="Buscar grupos..."
@@ -108,15 +109,27 @@ export function AppSidebar() {
                       isActive={pathname.includes(`/groups/${group.id}`)}
                     >
                       <Link href={`/groups/${group.id}`}>
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage
-                            src={group.imageUrl || "/placeholder-groups.png"}
-                            alt={group.name}
-                          />
-                          <AvatarFallback>
-                            {group.name.substring(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative w-8 h-8 mr-2">
+                          {group.imageUrl ? (
+                            <Image
+                              src={group.imageUrl}
+                              alt={group.name}
+                              width={32}
+                              height={32}
+                              className="object-cover rounded-full"
+                              style={{ aspectRatio: "1 / 1" }}
+                            />
+                          ) : (
+                            <Image
+                              src="/placeholder-groups.png"
+                              alt="Grupo"
+                              width={32}
+                              height={32}
+                              className="object-cover rounded-full"
+                              style={{ aspectRatio: "1 / 1" }}
+                            />
+                          )}
+                        </div>
                         <span>{group.name}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -147,9 +160,9 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href="/settings">
-                <Settings className="h-5 w-5" />
-                <span>Configurações</span>
+              <Link href="https://github.com/m4rrec0s" target="_blank">
+                <Github className="h-5 w-5" />
+                <span>Desenvolvedor</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

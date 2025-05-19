@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, Music, Search, Settings, User, X } from "lucide-react";
+import { Edit, LogOut, Menu, Music, Search, Settings, X } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
   DropdownMenu,
@@ -34,6 +34,7 @@ export function Navbar() {
   };
 
   const isGroupPage = pathname.startsWith("/groups");
+  const isProfilePage = pathname.startsWith("/profile");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -67,6 +68,10 @@ export function Navbar() {
         </div>
       </header>
     );
+  }
+
+  if (isProfilePage) {
+    return null;
   }
 
   return (
@@ -159,21 +164,44 @@ export function Navbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                  <DropdownMenuLabel>Perfil</DropdownMenuLabel>
+                  <DropdownMenuItem>
+                    <div className="flex items-center">
+                      {user?.imageUrl ? (
+                        <Image
+                          src={user?.imageUrl}
+                          alt="User"
+                          className="rounded-full"
+                          width={32}
+                          height={32}
+                        />
+                      ) : (
+                        <Image
+                          src="/placeholder-user.png"
+                          alt="User"
+                          className="rounded-full"
+                          width={32}
+                          height={32}
+                        />
+                      )}
+                      <div className="ml-2 flex flex-col">
+                        <span className="text-sm font-semibold">
+                          {user?.name}
+                        </span>
+                        <span className="text-xs font-medium text-gray-500">
+                          {user?.email}
+                        </span>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/profile">
-                      <User className="mr-2 h-4 w-4" />
-                      Perfil
+                      <Edit className="mr-2 h-4 w-4" />
+                      Editar Perfil
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Configurações
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sair
