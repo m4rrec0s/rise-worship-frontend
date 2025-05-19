@@ -3,14 +3,10 @@
 import { LoadingIcon } from "@/app/components/loading-icon";
 import MusicItem from "@/app/components/musics/music-item";
 import { Button } from "@/app/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
+import { useAuth } from "@/app/context/auth-context";
 import useApi from "@/app/hooks/use-api";
 import { Setlist } from "@/app/types/setlist";
+import { User } from "@/app/types/user";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,11 +14,20 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+interface MemberData {
+  id: string;
+  permission: string;
+  user: User;
+}
+
 const SetListPage = () => {
   const params = useParams();
   const router = useRouter();
-  const { getSetListById } = useApi();
+  const { getSetListById, getGroupMembers } = useApi();
   const [setlist, setSetlist] = useState<Setlist | null>(null);
+  const { user } = useAuth();
+  const [permission, setPermission] = useState<string | null>(null);
+  const {} = useApi();
 
   const groupId = params.groupId as string;
   const setlistId = params.setlistId as string;
@@ -32,6 +37,17 @@ const SetListPage = () => {
       try {
         const setlistData = await getSetListById(setlistId);
         setSetlist(setlistData);
+
+        const membersResponse = await getGroupMembers(groupId);
+
+        const permissionFound = membersResponse.find(
+          (member: MemberData) => member.user.id === user?.id
+        );
+
+        if (permissionFound) {
+          const userPermission = permissionFound.permission;
+          setPermission(userPermission);
+        }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast.error("Erro ao carregar dados");
@@ -81,18 +97,20 @@ const SetListPage = () => {
 
             <div className="flex items-center justify-between gap-4 mb-6">
               <h2 className="text-xl font-semibold mt-6">Músicas</h2>
-              <Link
-                href={`/groups/${groupId}/setlist/${setlistId}/add-music`}
-                className="text-sm text-orange-500 hover:underline cursor-pointer"
-              >
-                <Button
-                  variant="outline"
-                  className="bg-orange-500 hover:bg-orange-600"
+              {(permission === "admin" || permission === "edit") && (
+                <Link
+                  href={`/groups/${groupId}/setlist/${setlistId}/add-music`}
+                  className="text-sm text-orange-500 hover:underline cursor-pointer"
                 >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Música
-                </Button>
-              </Link>
+                  <Button
+                    variant="outline"
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Música
+                  </Button>
+                </Link>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2  gap-4 mt-4">

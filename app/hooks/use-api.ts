@@ -297,9 +297,14 @@ class ApiService {
 
   // ===== SETLIST MÚSICAS =====
 
-  addMusicToSetList = async (setlistId: string, musicId: string) => {
+  addMusicToSetList = async (
+    setlistId: string,
+    musicId: string,
+    order: number = 0
+  ) => {
     const response = await axiosClient.post(
-      `/setlists/${setlistId}/musics/${musicId}`
+      `/setlists/${setlistId}/musics/${musicId}`,
+      { order }
     );
     this.clearCache(`setlist_${setlistId}`);
     return response.data;

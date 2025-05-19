@@ -18,20 +18,23 @@ import {
 
 interface SetlistProps {
   groupId: string;
+  userPermissions: string;
   setlists: Setlist[];
 }
 
-const SetListList = ({ groupId, setlists }: SetlistProps) => {
+const SetListList = ({ groupId, setlists, userPermissions }: SetlistProps) => {
   return (
     <>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">Setlists</h2>
-        <Button asChild className="bg-orange-500 hover:bg-orange-600">
-          <Link href={`/groups/${groupId}/create-setlist`}>
-            <Plus className="mr-2 h-4 w-4" />
-            Criar Setlist
-          </Link>
-        </Button>
+        {(userPermissions === "edit" || userPermissions === "admin") && (
+          <Button asChild className="bg-orange-500 hover:bg-orange-600">
+            <Link href={`/groups/${groupId}/create-setlist`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Setlist
+            </Link>
+          </Button>
+        )}
       </div>{" "}
       {setlists.length === 0 ? (
         <Card className="bg-muted/40">
@@ -40,14 +43,19 @@ const SetListList = ({ groupId, setlists }: SetlistProps) => {
               Nenhuma setlist encontrada
             </h3>
             <p className="text-muted-foreground mb-4">
-              Comece criando uma setlist para seu próximo culto.
+              Você ainda não possui setlists criadas.{" "}
+              {userPermissions === "edit" || userPermissions === "admin"
+                ? "Crie uma setlist para começar."
+                : "As setlists são criadas por administradores ou editores do grupo."}
             </p>
-            <Button asChild className="bg-orange-500 hover:bg-orange-600">
-              <Link href={`/groups/${groupId}/create-setlist`}>
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Primeira Setlist
-              </Link>
-            </Button>
+            {(userPermissions === "edit" || userPermissions === "admin") && (
+              <Button asChild className="bg-orange-500 hover:bg-orange-600">
+                <Link href={`/groups/${groupId}/create-setlist`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Primeira Setlist
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (

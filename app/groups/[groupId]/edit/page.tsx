@@ -34,6 +34,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/app/components/ui/alert-dialog";
 
 interface GroupMember {
   user: User;
@@ -340,6 +351,47 @@ export default function EditGroupPage() {
               "Salvar Alterações"
             )}
           </Button>
+          {isAdmin && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" disabled={isSaving}>
+                  <Trash className="mr-2 h-4 w-4" />
+                  Excluir Grupo
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Tem certeza que deseja excluir este grupo?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não poderá ser desfeita. Todos os dados
+                    relacionados ao grupo serão removidos permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700"
+                    onClick={async () => {
+                      try {
+                        setIsSaving(true);
+                        await api.deleteGroup(groupId);
+                        toast.success("Grupo excluído com sucesso!");
+                        router.push("/groups");
+                      } catch (error) {
+                        toast.error("Erro ao excluir grupo");
+                      } finally {
+                        setIsSaving(false);
+                      }
+                    }}
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </form>
     </div>

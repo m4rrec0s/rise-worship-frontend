@@ -315,7 +315,11 @@ export default function GroupPage() {
           />
         </TabsContent>
         <TabsContent value="setlists">
-          <SetListList groupId={groupId} setlists={setlists} />
+          <SetListList
+            groupId={groupId}
+            setlists={setlists}
+            userPermissions={permission}
+          />
         </TabsContent>
         <TabsContent value="members">
           <div className="flex justify-between items-center mb-6">
@@ -385,13 +389,41 @@ export default function GroupPage() {
                       <DropdownMenuContent align="end" className="">
                         <DropdownMenuLabel>Mais Opções</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="cursor-pointer text-red-500 text-xs flex items-center hover:bg-red-100"
-                          onClick={() => handleRemoveMember(member.user.id)}
-                        >
-                          <Users className="mr-2 h-4 w-4 text-red-500" />
-                          <span>Remover Membro</span>
-                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="cursor-pointer text-xs flex items-center">
+                              <DoorOpen className="mx-2 h-4 w-4" />
+                              Remover Membro
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogTitle>
+                              Você tem certeza?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Você realmente deseja remover este membro do
+                              grupo? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>{" "}
+                            <div className="flex justify-end gap-2 mt-4">
+                              <AlertDialogAction asChild>
+                                <Button
+                                  variant="destructive"
+                                  onClick={() =>
+                                    handleRemoveMember(member.user.id)
+                                  }
+                                >
+                                  Remover
+                                </Button>
+                              </AlertDialogAction>
+                              <Button
+                                variant="outline"
+                                onClick={() => setShowLeaveDialog(false)}
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
+                          </AlertDialogContent>
+                        </AlertDialog>
                         <DropdownMenuItem className="cursor-pointer text-xs flex items-center">
                           <Select
                             onValueChange={(value) =>

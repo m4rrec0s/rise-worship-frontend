@@ -26,7 +26,7 @@ const AddMusicPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [allMusic, setAllMusic] = useState<Music[]>([]);
-  const [filteredMusic, setFilteredMusic] = useState<Music[]>([]); // Garantir que seja sempre um array
+  const [filteredMusic, setFilteredMusic] = useState<Music[]>([]);
   const [setlist, setSetlist] = useState<Setlist | null>(null);
   const [selectedMusicIds, setSelectedMusicIds] = useState<Set<string>>(
     new Set()
@@ -35,14 +35,10 @@ const AddMusicPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (dataFetchedRef.current) return;
-
       try {
         setLoading(true);
-
         const setlistData = await api.getSetListById(setlistId);
         setSetlist(setlistData);
-
         const initialSelected = new Set<string>();
         if (setlistData.musics && setlistData.musics.length > 0) {
           setlistData.musics.forEach((setlistMusic: SetlistMusic) => {
@@ -51,13 +47,10 @@ const AddMusicPage = () => {
             }
           });
         }
-        setSelectedMusicIds(initialSelected); // Verificar se os dados retornados são um array
+        setSelectedMusicIds(initialSelected);
         const musicData = await api.getAllMusicsByGroup(groupId);
-
         setAllMusic(musicData.data);
         setFilteredMusic(musicData.data);
-
-        dataFetchedRef.current = true;
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast.error("Erro ao carregar músicas. Tente novamente.");
@@ -65,9 +58,8 @@ const AddMusicPage = () => {
         setLoading(false);
       }
     };
-
     fetchData();
-  }, [api]);
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -83,7 +75,7 @@ const AddMusicPage = () => {
       );
       setFilteredMusic(filtered);
     }
-  }, []);
+  }, [searchQuery, allMusic]);
 
   const handleMusicToggle = async (
     musicId: string,
@@ -99,7 +91,8 @@ const AddMusicPage = () => {
         });
         toast.success("Música removida da setlist");
       } else {
-        await api.addMusicToSetList(setlistId, musicId);
+        // Envia order: 0 por padrão
+        await api.addMusicToSetList(setlistId, musicId, 0);
         setSelectedMusicIds((prev) => {
           const newSet = new Set(prev);
           newSet.add(musicId);
