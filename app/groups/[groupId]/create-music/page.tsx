@@ -1,8 +1,6 @@
 "use client";
 
-import type React from "react";
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, ImageIcon, Search } from "lucide-react";
@@ -25,11 +23,23 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { useApi } from "@/app/hooks/use-api";
-import { Group } from "@/app/types/group";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 import { LoadingIcon } from "@/app/components/loading-icon";
 import Image from "next/image";
+import Editor from "react-simple-code-editor";
+import { transpose, keys, wrap } from "@hrgui/chord-charts";
+import type { Group } from "@/app/types/group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 
 interface SearchResult {
   title: string;
@@ -43,67 +53,103 @@ interface ExtractedData {
   lyrics: string;
 }
 
+interface ChordSegment {
+  chord: string;
+  lineIndex: number;
+  charOffset: number;
+}
+
+interface Cipher {
+  key: string;
+  segments: ChordSegment[];
+}
+
+interface KeysSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function KeysSelect({ value, onChange }: KeysSelectProps) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Selecione um tom" />
+      </SelectTrigger>
+      <SelectContent>
+        {keys.map((key) => (
+          <SelectItem key={key.name} value={key.name}>
+            {key.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export default function CreateMusicPage() {
   const params = useParams();
   const router = useRouter();
   const api = useApi();
-  const groupId = params.groupId as string;
+  const groupId = params.groupId;
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [group, setGroup] = useState<Group | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [extractUrl, setExtractUrl] = useState("");
-  const [showResults, setShowResults] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [extractUrl, setExtractUrl] = useState<string>("");
+  const [showResults, setShowResults] = useState<boolean>(false);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showCipherDialog, setShowCipherDialog] = useState<boolean>(false);
+  const [createdMusicId, setCreatedMusicId] = useState<string>("");
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    author: string;
+    tone: string;
+    bpm: string;
+    lyrics: string;
+    links: { youtube: string; spotify: string; deezer: string };
+  }>({
     title: "",
     author: "",
     tone: "C",
     bpm: "",
     lyrics: "",
-    cipher: "",
-    links: {
-      youtube: "",
-      spotify: "",
-      deezer: "",
-    },
+    links: { youtube: "", spotify: "", deezer: "" },
   });
 
   useEffect(() => {
+    let isMounted = true;
     const fetchGroup = async () => {
       try {
         setIsLoading(true);
-        const groupData = await api.getGroupById(groupId);
-        setGroup(groupData);
+        const groupData = await api.getGroupById(String(groupId));
+        if (isMounted) setGroup(groupData);
       } catch (error) {
         console.error("Erro ao carregar dados do grupo:", error);
-        toast.error("Erro ao carregar dados do grupo");
+        if (isMounted) toast.error("Erro ao carregar dados do grupo");
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
-
     fetchGroup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId]);
+    return () => {
+      isMounted = false;
+    };
+  }, [groupId, api]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       toast.error("Por favor, digite algo para buscar");
       return;
     }
-
     try {
       setIsSearching(true);
       setShowResults(true);
       setSearchResults([]);
-
       const results = await api.searchLyrics(searchQuery);
-
       if (Array.isArray(results) && results.length > 0) {
         setSearchResults(results);
       } else {
@@ -113,7 +159,6 @@ export default function CreateMusicPage() {
     } catch (error) {
       console.error("Erro ao buscar letras:", error);
       toast.error("Erro ao buscar letras de música");
-      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -124,40 +169,34 @@ export default function CreateMusicPage() {
       toast.error("Por favor, insira uma URL válida");
       return;
     }
-
     try {
       toast.info("Extraindo letra, por favor aguarde...");
       const result = await api.extractLyrics(url);
-
       if (result && result.lyrics) {
         setFormData((current) => ({
           ...current,
           lyrics: result.lyrics,
           title: result.title || current.title,
-          author: result.artist || current.author, // Usa o campo artist da resposta da API
+          author: result.author || current.author,
         }));
         toast.success("Letra extraída com sucesso!");
       } else {
-        toast.error(
-          "Não foi possível extrair a letra. O formato do site não é suportado."
-        );
+        toast.error("Não foi possível extrair a letra.");
       }
     } catch (error) {
       console.error("Erro ao extrair letra:", error);
       toast.error("Não foi possível extrair a letra desta URL");
     } finally {
-      // Limpar o campo após a tentativa de extração para evitar duplicações
       setExtractUrl("");
     }
   };
 
   const handleSelectSong = async (song: SearchResult) => {
     setShowResults(false);
-
     if (song.link) {
       try {
         toast.info("Obtendo letra completa, por favor aguarde...");
-        const extractedData: ExtractedData = await api.extractLyrics(song.link);
+        const extractedData = await api.extractLyrics(song.link);
         if (extractedData && extractedData.lyrics) {
           setFormData((current) => ({
             ...current,
@@ -180,31 +219,24 @@ export default function CreateMusicPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-
-    // Sempre garantindo que temos um valor string (nunca undefined)
     const safeValue = value ?? "";
-
-    if (name.includes(".")) {
-      // Para campos aninhados como links.youtube
-      const [parent, child] = name.split(".");
-      const parentKey = parent as keyof typeof formData;
-      const parentValue = formData[parentKey];
-
-      // Check if parentValue is an object before spreading
-      if (parentValue && typeof parentValue === "object") {
-        setFormData({
-          ...formData,
-          [parent]: {
-            ...parentValue,
-            [child]: safeValue,
-          },
-        });
-      }
+    if (
+      name === "links.youtube" ||
+      name === "links.spotify" ||
+      name === "links.deezer"
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        links: {
+          ...prev.links,
+          [name.split(".")[1]]: safeValue,
+        },
+      }));
     } else {
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         [name]: safeValue,
-      });
+      }));
     }
   };
 
@@ -218,21 +250,15 @@ export default function CreateMusicPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Verifica se é uma imagem
       if (!file.type.match("image.*")) {
         toast.error("Por favor, selecione apenas arquivos de imagem");
         return;
       }
-
-      // Limitando o tamanho do arquivo para 5MB
       if (file.size > 5 * 1024 * 1024) {
         toast.error("A imagem deve ser menor que 5MB");
         return;
       }
-
       setSelectedImage(file);
-
-      // Criar uma URL para preview da imagem
       const imageUrl = URL.createObjectURL(file);
       setPreviewImage(imageUrl);
     }
@@ -246,41 +272,42 @@ export default function CreateMusicPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     try {
-      // Preparar dados para envio
       const musicData = new FormData();
       musicData.append("title", formData.title);
       musicData.append("author", formData.author);
       musicData.append("tone", formData.tone);
       musicData.append("lyrics", formData.lyrics);
-
-      if (formData.bpm) {
-        musicData.append("bpm", formData.bpm);
-      }
-
-      if (formData.cipher) {
-        musicData.append("cipher", formData.cipher);
-      }
-
-      if (selectedImage) {
-        musicData.append("image", selectedImage);
-      }
-
+      if (formData.bpm) musicData.append("bpm", formData.bpm);
+      if (selectedImage) musicData.append("image", selectedImage);
       musicData.append("links", JSON.stringify(formData.links));
 
-      await api.createMusic(groupId, musicData);
+      const result = await api.createMusic(String(groupId), musicData);
       toast.success("Música adicionada com sucesso!");
-      router.push(`/groups/${groupId}`);
+
+      if (result && result.id) {
+        setCreatedMusicId(result.id);
+        setShowCipherDialog(true);
+      } else {
+        router.push(`/groups/${groupId}`);
+      }
     } catch (error) {
-      toast.error(
-        "Erro ao adicionar música. " +
-          ((error as AxiosError<{ error: string }>)?.response?.data?.error ||
-            "Tente novamente mais tarde.")
-      );
+      console.error("Erro ao adicionar música:", error);
+      let errorMessage = "Tente novamente mais tarde.";
+      if (error instanceof AxiosError && error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      toast.error(`Erro ao adicionar música: ${errorMessage}`);
     }
+  };
+  const handleGoToCipherEdit = () => {
+    router.push(`/groups/${groupId}/music/${createdMusicId}/edit-cipher`);
+  };
+
+  const handleSkipCipherEdit = () => {
+    router.push(`/groups/${groupId}`);
   };
 
   if (isLoading) {
@@ -349,7 +376,6 @@ export default function CreateMusicPage() {
             <div className="flex gap-2 mt-1">
               <Input
                 placeholder="Ex: https://letras.mus.br/artista/musica/"
-                name="extractUrl"
                 value={extractUrl}
                 onChange={(e) => setExtractUrl(e.target.value)}
               />
@@ -376,7 +402,7 @@ export default function CreateMusicPage() {
                 searchResults.map((song, index) => (
                   <div
                     key={index}
-                    className="p-3 hover:bg-orange-50 cursor-pointer"
+                    className="p-3 hover:bg-orange-50 dark:hover:bg-neutral-600 cursor-pointer"
                     onClick={() => handleSelectSong(song)}
                   >
                     <div className="font-medium">{song.title}</div>
@@ -429,37 +455,7 @@ export default function CreateMusicPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tone">Tom</Label>
-                <Select value={formData.tone} onValueChange={handleToneChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um tom" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">A</SelectItem>
-                    <SelectItem value="A#">A#</SelectItem>
-                    <SelectItem value="B">B</SelectItem>
-                    <SelectItem value="C">C</SelectItem>
-                    <SelectItem value="C#">C#</SelectItem>
-                    <SelectItem value="D">D</SelectItem>
-                    <SelectItem value="D#">D#</SelectItem>
-                    <SelectItem value="E">E</SelectItem>
-                    <SelectItem value="F">F</SelectItem>
-                    <SelectItem value="F#">F#</SelectItem>
-                    <SelectItem value="G">G</SelectItem>
-                    <SelectItem value="G#">G#</SelectItem>
-                    <SelectItem value="Am">Am</SelectItem>
-                    <SelectItem value="A#m">A#m</SelectItem>
-                    <SelectItem value="Bm">Bm</SelectItem>
-                    <SelectItem value="Cm">Cm</SelectItem>
-                    <SelectItem value="C#m">C#m</SelectItem>
-                    <SelectItem value="Dm">Dm</SelectItem>
-                    <SelectItem value="D#m">D#m</SelectItem>
-                    <SelectItem value="Em">Em</SelectItem>
-                    <SelectItem value="Fm">Fm</SelectItem>
-                    <SelectItem value="F#m">F#m</SelectItem>
-                    <SelectItem value="Gm">Gm</SelectItem>
-                    <SelectItem value="G#m">G#m</SelectItem>
-                  </SelectContent>
-                </Select>
+                <KeysSelect value={formData.tone} onChange={handleToneChange} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bpm">Andamento (BPM)</Label>
@@ -494,31 +490,22 @@ export default function CreateMusicPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3 w-full">
-                    <div className="w-full flex justify-center">
-                      {" "}
-                      <ImageIcon
-                        className="h-10 w-10 text-muted-foreground mb-2"
-                        // alt="Ícone de imagem"
-                      />
-                    </div>
+                    <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
                     <Label
                       htmlFor="imageInput"
                       className="cursor-pointer text-center bg-muted/70 hover:bg-muted w-full py-2 rounded-md transition-colors"
                     >
                       Clique para selecionar uma imagem
                     </Label>
-                    <input
+                    <Input
                       id="imageInput"
-                      name="image"
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      aria-label="Upload de imagem"
-                      title="Selecione uma imagem para a música"
                       className="hidden"
                     />
                     <span className="text-xs text-muted-foreground">
-                      Formatos suportados: JPG, PNG, GIF. Tamanho máximo: 8MB
+                      Formatos suportados: JPG, PNG, GIF. Tamanho máximo: 5MB
                     </span>
                   </div>
                 )}
@@ -530,9 +517,9 @@ export default function CreateMusicPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="youtube" className="text-xs">
-                    YouTube{""}
+                    YouTube{" "}
                     <span className="text-muted-foreground">
-                      (será usada como imagem a thumbnail do vídeo)
+                      (thumbnail será usada como imagem)
                     </span>
                   </Label>
                   <Input
@@ -581,17 +568,6 @@ export default function CreateMusicPage() {
                 required
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cipher">Cifra/Acordes (Opcional)</Label>
-              <Textarea
-                id="cipher"
-                name="cipher"
-                value={formData.cipher}
-                onChange={handleInputChange}
-                rows={6}
-              />
-            </div>
           </CardContent>
         </Card>
 
@@ -604,6 +580,29 @@ export default function CreateMusicPage() {
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={showCipherDialog} onOpenChange={setShowCipherDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Adicionar Cifra</AlertDialogTitle>
+            <AlertDialogDescription>
+              A música foi criada com sucesso! Deseja adicionar a cifra agora ou
+              deixar para depois?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleSkipCipherEdit}>
+              Deixar para depois
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleGoToCipherEdit}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              Adicionar agora
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -37,14 +37,12 @@ export default function EditMusicPage() {
   const [userPermission, setUserPermission] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-
   const [formData, setFormData] = useState({
     title: "",
     author: "",
     lyrics: "",
     tone: "",
     bpm: "",
-    cipher: "",
     links: {
       youtube: "",
       spotify: "",
@@ -59,16 +57,13 @@ export default function EditMusicPage() {
 
         // Carregar os dados da música
         const musicData = await api.getMusicById(musicId);
-        setMusic(musicData);
-
-        // Preencher o formulário com os dados da música
+        setMusic(musicData); // Preencher o formulário com os dados da música
         setFormData({
           title: musicData.title || "",
           author: musicData.author || "",
           lyrics: musicData.lyrics || "",
           tone: musicData.tone || "",
           bpm: musicData.bpm ? String(musicData.bpm) : "",
-          cipher: musicData.cipher || "",
           links: {
             youtube: musicData.links?.youtube || "",
             spotify: musicData.links?.spotify || "",
@@ -193,13 +188,8 @@ export default function EditMusicPage() {
       musicData.append("author", formData.author);
       musicData.append("lyrics", formData.lyrics);
       musicData.append("tone", formData.tone || "");
-
       if (formData.bpm) {
         musicData.append("bpm", formData.bpm);
-      }
-
-      if (formData.cipher) {
-        musicData.append("cipher", formData.cipher);
       }
 
       if (selectedImage) {
@@ -269,7 +259,6 @@ export default function EditMusicPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="author">Autor/Intérprete*</Label>
                 <Input
@@ -281,7 +270,6 @@ export default function EditMusicPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="tone">Tom</Label>
                 <Input
@@ -292,7 +280,6 @@ export default function EditMusicPage() {
                   placeholder="Ex: C, D, Em, etc."
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="bpm">BPM</Label>
                 <Input
@@ -304,7 +291,6 @@ export default function EditMusicPage() {
                   placeholder="Batidas por minuto"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="youtube">Link do YouTube</Label>
                 <Input
@@ -314,7 +300,6 @@ export default function EditMusicPage() {
                   placeholder="URL do YouTube"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="spotify">Link do Spotify</Label>
                 <Input
@@ -323,19 +308,7 @@ export default function EditMusicPage() {
                   onChange={(e) => handleLinkChange(e, "spotify")}
                   placeholder="URL do Spotify"
                 />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cipher">Cifra (opcional)</Label>
-              <Textarea
-                id="cipher"
-                name="cipher"
-                value={formData.cipher}
-                onChange={handleInputChange}
-                placeholder="Cole a cifra aqui..."
-                rows={4}
-              />
+              </div>{" "}
             </div>
 
             <div className="space-y-2">
@@ -422,9 +395,18 @@ export default function EditMusicPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
-
+        </Card>{" "}
         <div className="flex justify-end gap-3">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() =>
+              router.push(`/groups/${groupId}/music/${musicId}/edit-cipher`)
+            }
+            className="mr-auto"
+          >
+            Editar Cifra
+          </Button>
           <Button variant="outline" asChild disabled={isSaving}>
             <Link href={`/groups/${groupId}/music/${musicId}`}>Cancelar</Link>
           </Button>

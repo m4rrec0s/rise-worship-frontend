@@ -4,12 +4,25 @@ import { useParams, useRouter } from "next/navigation";
 import { useApi } from "@/app/hooks/use-api";
 import { useEffect, useState } from "react";
 import { Music } from "@/app/types/music";
-import { ChevronLeft, Edit } from "lucide-react";
+import { ChevronLeft, Edit, Music2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { LoadingIcon } from "@/app/components/loading-icon";
 import { useAuth } from "@/app/context/auth-context";
+import { Switch } from "@/app/components/ui/switch";
+import { Label } from "@/app/components/ui/label";
+
+interface ChordSegment {
+  chord: string;
+  lineIndex: number;
+  charOffset: number;
+}
+
+interface Cipher {
+  key: string;
+  segments: ChordSegment[];
+}
 
 const MusicPage = () => {
   const params = useParams();
@@ -21,6 +34,8 @@ const MusicPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [music, setMusic] = useState<Music | null>(null);
   const [userPermission, setUserPermission] = useState<string | null>(null);
+  const [showChords, setShowChords] = useState(false);
+  const [parsedCipher, setParsedCipher] = useState<Cipher | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,6 +43,15 @@ const MusicPage = () => {
         setIsLoading(true);
         const musicData = await getMusicById(musicId);
         setMusic(musicData);
+
+        if (musicData.cipher) {
+          try {
+            const cipherData = JSON.parse(musicData.cipher) as Cipher;
+            setParsedCipher(cipherData);
+          } catch (error) {
+            console.error("Erro ao parsear a cifra:", error);
+          }
+        }
 
         if (user && groupId) {
           const members = await getGroupMembers(groupId);
@@ -49,6 +73,60 @@ const MusicPage = () => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [musicId, groupId, user]);
+
+  const renderLyricsWithChords = () => {
+    if (!music || !music.lyrics || !parsedCipher || !parsedCipher.segments) {
+      return music?.lyrics || "";
+    }
+
+    const lines = music.lyrics.split("\n");
+    const result: React.ReactNode[] = [];
+
+    const chordMap: { [lineIndex: number]: ChordSegment[] } = {};
+
+    parsedCipher.segments.forEach((segment) => {
+      if (!chordMap[segment.lineIndex]) {
+        chordMap[segment.lineIndex] = [];
+      }
+      chordMap[segment.lineIndex].push(segment);
+    });
+
+    Object.keys(chordMap).forEach((lineIndex) => {
+      chordMap[Number(lineIndex)].sort((a, b) => a.charOffset - b.charOffset);
+    });
+
+    lines.forEach((line, lineIndex) => {
+      if (chordMap[lineIndex] && chordMap[lineIndex].length > 0) {
+        let chordLine = "";
+        let lastOffset = 0;
+
+        chordMap[lineIndex].forEach((segment) => {
+          while (chordLine.length < segment.charOffset) {
+            chordLine += " ";
+          }
+          chordLine += segment.chord;
+          lastOffset = segment.charOffset + segment.chord.length;
+        });
+
+        result.push(
+          <div
+            key={`chord-${lineIndex}`}
+            className="text-orange-500 font-mono font-medium"
+          >
+            {chordLine}
+          </div>
+        );
+      }
+
+      result.push(
+        <div key={`line-${lineIndex}`} className="mb-1">
+          {line}
+        </div>
+      );
+    });
+
+    return <>{result}</>;
+  };
 
   const canEditMusic = userPermission === "admin" || userPermission === "edit";
 
@@ -125,7 +203,6 @@ const MusicPage = () => {
                       </p>
                     )}
                   </div>
-                  {/* Links externos se houver */}
                   {music.links &&
                     typeof music.links === "object" &&
                     Object.keys(music.links).length > 0 && (
@@ -171,13 +248,22 @@ const MusicPage = () => {
                 </div>
               </div>
 
-              {/* Coluna da letra */}
               <div className="md:w-2/3 p-6 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
                   Letra
                 </h3>
                 <div className="bg-gray-50 dark:bg-neutral-900 p-4 rounded-lg shadow-inner whitespace-pre-wrap font-medium text-gray-700 dark:text-gray-200 ">
-                  {music.lyrics}
+                  {showChords ? renderLyricsWithChords() : music.lyrics}
+                </div>
+                <div className="mt-4 flex items-center">
+                  <Switch
+                    id="show-chords"
+                    checked={showChords}
+                    onCheckedChange={setShowChords}
+                  />
+                  <Label htmlFor="show-chords" className="ml-2">
+                    Mostrar acordes
+                  </Label>
                 </div>
               </div>
             </div>
