@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useApi } from "@/app/hooks/use-api";
 import { Group as TypeGroup } from "@/app/types/group";
 import { LoadingIcon } from "./loading-icon";
@@ -31,92 +31,106 @@ export function GroupListing() {
     [key: string]: GroupInfoProps;
   }>({});
   const { user } = useAuth();
-
   const api = useApi();
+  const fetchGroups = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      if (!user) {
+        toast.error("Usuário não encontrado");
+        return;
+      } // Limpar cache antes de recarregar
+      api.clearAllGroupCaches();
+
+      const response = await api.getGroupsByUserId(user.id);
+      const data = response
+        ? (response as Array<TypeGroup | { groupId: string; group: TypeGroup }>)
+        : [];
+
+      const groupsData = data.map((item) => {
+        if ("groupId" in item && "group" in item) {
+          return item.group;
+        }
+        return item as TypeGroup;
+      });
+
+      setGroups(groupsData);
+
+      if (groupsData.length > 0) {
+        const groupStats = await Promise.all(
+          groupsData.map(async (group) => {
+            try {
+              const stats = await api.getInfoGroup(group.id);
+
+              const formattedStats = {
+                musicsCount: stats.stats?.musicsCount || 0,
+                setlistsCount: stats.stats?.setlistsCount || 0,
+                membersCount: stats.stats?.membersCount || 0,
+              };
+
+              return {
+                ...group,
+                stats: formattedStats,
+              };
+            } catch (err) {
+              toast.error(
+                `Erro ao obter estatísticas do grupo ${group.id}: ${
+                  (err as Error).message
+                }`
+              );
+              return {
+                ...group,
+                stats: {
+                  musicsCount: 0,
+                  setlistsCount: 0,
+                  membersCount: 0,
+                },
+              };
+            }
+          })
+        );
+
+        const groupsInfoMap = groupStats.reduce((map, group) => {
+          map[group.id] = group;
+          return map;
+        }, {} as { [key: string]: GroupInfoProps });
+
+        setGroupsInfo(groupsInfoMap);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar grupos:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [api, user]);
+
   useEffect(() => {
     api.clearGroupsCache();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        setIsLoading(true);
-
-        if (!user) {
-          toast.error("Usuário não encontrado");
-          return;
-        }
-
-        const response = await api.getGroupsByUserId(user.id);
-        const data = response
-          ? (response as Array<
-              TypeGroup | { groupId: string; group: TypeGroup }
-            >)
-          : [];
-
-        const groupsData = data.map((item) => {
-          if ("groupId" in item && "group" in item) {
-            return item.group;
-          }
-          return item as TypeGroup;
-        });
-
-        setGroups(groupsData);
-
-        if (groupsData.length > 0) {
-          const groupStats = await Promise.all(
-            groupsData.map(async (group) => {
-              try {
-                const stats = await api.getInfoGroup(group.id);
-
-                const formattedStats = {
-                  musicsCount: stats.stats?.musicsCount || 0,
-                  setlistsCount: stats.stats?.setlistsCount || 0,
-                  membersCount: stats.stats?.membersCount || 0,
-                };
-
-                return {
-                  ...group,
-                  stats: formattedStats,
-                };
-              } catch (err) {
-                toast.error(
-                  `Erro ao obter estatísticas do grupo ${group.id}: ${
-                    (err as Error).message
-                  }`
-                );
-                return {
-                  ...group,
-                  stats: {
-                    musicsCount: 0,
-                    setlistsCount: 0,
-                    membersCount: 0,
-                  },
-                };
-              }
-            })
-          );
-
-          const groupsInfoMap = groupStats.reduce((map, group) => {
-            map[group.id] = group;
-            return map;
-          }, {} as { [key: string]: GroupInfoProps });
-
-          setGroupsInfo(groupsInfoMap);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar grupos:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (user) {
       fetchGroups();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
+
+  // Listener para detectar quando o usuário volta para a página
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        // Usuário voltou para a página, recarregar dados
+        fetchGroups();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [fetchGroups, user]);
 
   if (isLoading) {
     return (

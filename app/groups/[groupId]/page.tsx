@@ -84,6 +84,49 @@ export default function GroupPage() {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [permission, setPermission] = useState("");
+  // Função para recarregar dados do grupo
+  const reloadGroupData = useCallback(async () => {
+    // Limpar caches antes de recarregar
+    api.clearSpecificCache(`group_${groupId}`);
+    api.clearSpecificCache(`group_members_${groupId}`);
+    api.clearSpecificCache(`setlists_group_${groupId}`);
+    api.clearSpecificCache(`group_info_${groupId}`);
+
+    setIsLoading(true);
+    try {
+      const response = await api.getGroupById(groupId);
+      if (!response) {
+        toast.error("Grupo não encontrado");
+        return;
+      }
+      setGroup(response);
+
+      const membersResponse = await api.getGroupMembers(groupId);
+      setMembers(membersResponse);
+
+      const setlistsResponse = await api.getSetListsByGroup(groupId);
+      setSetlists(setlistsResponse);
+
+      const isUserAdmin = membersResponse.some(
+        (member: MemberData) =>
+          member.user.id === user?.id && member.permission === "admin"
+      );
+      setIsAdmin(isUserAdmin);
+
+      const permissionFound = membersResponse.find(
+        (member: MemberData) => member.user.id === user?.id
+      );
+      if (permissionFound) {
+        const userPermission = permissionFound.permission;
+        setPermission(userPermission);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar grupo:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [api, groupId, user?.id]);
+
   useEffect(() => {
     const fetchGroup = async () => {
       setIsLoading(true);
@@ -123,6 +166,38 @@ export default function GroupPage() {
     fetchGroup();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, user?.id]);
+
+  // Listener para detectar quando o usuário volta para a página
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Usuário voltou para a página, recarregar dados
+        reloadGroupData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [reloadGroupData]);
+
+  // Listener para detectar quando o usuário volta para a página
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Usuário voltou para a página, recarregar dados
+        reloadGroupData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [reloadGroupData]);
 
   const loadMusics = useCallback(
     async (page: number, perPage: number, search: string) => {

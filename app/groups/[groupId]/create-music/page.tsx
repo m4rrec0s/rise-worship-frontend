@@ -119,7 +119,6 @@ export default function CreateMusicPage() {
     lyrics: "",
     links: { youtube: "", spotify: "", deezer: "" },
   });
-
   useEffect(() => {
     let isMounted = true;
     const fetchGroup = async () => {
@@ -138,7 +137,8 @@ export default function CreateMusicPage() {
     return () => {
       isMounted = false;
     };
-  }, [groupId, api]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {

@@ -2,14 +2,13 @@ import axiosClient from "../config/axios-client";
 import { LoginCredentials, RegisterCredentials } from "../types/user";
 import { useMemo, useState, useCallback, useEffect } from "react";
 
-// Interface para o cache dinâmico
 interface CacheType {
   users: unknown | null;
   groups: unknown | null;
   setlists: unknown | null;
   musics: unknown | null;
   loading: boolean;
-  [key: string]: unknown | null; // Permitir índices dinâmicos
+  [key: string]: unknown | null;
 }
 
 interface AddUserToGroupData {
@@ -25,6 +24,10 @@ class ApiService {
     musics: null,
     loading: false,
   };
+
+  static getGlobalCache() {
+    return ApiService.globalCache;
+  }
 
   clearAllCache() {
     Object.keys(ApiService.globalCache).forEach((key) => {
@@ -93,7 +96,6 @@ class ApiService {
   clearGroupsCache = () => {
     this.clearCache("groups");
   };
-
   createGroup = async (groupData: FormData) => {
     const response = await axiosClient.post("/groups", groupData, {
       headers: {
@@ -101,6 +103,11 @@ class ApiService {
       },
     });
     this.clearCache("groups");
+    Object.keys(ApiService.getGlobalCache()).forEach((key) => {
+      if (key.startsWith("groups_user_") || key.startsWith("group_info_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
   getAllGroups = async (page = 1, perPage = 15, search = "") => {
@@ -155,7 +162,6 @@ class ApiService {
     );
     return response.data;
   };
-
   updateUserPermission = async (
     groupId: string,
     userId: string,
@@ -167,9 +173,9 @@ class ApiService {
     );
 
     this.clearCache(`group_members_${groupId}`);
+    this.clearCache(`group_info_${groupId}`);
     return response.data;
   };
-
   addUserToGroup = async (groupId: string, userData: AddUserToGroupData) => {
     const response = await axiosClient.post(
       `/groups/${groupId}/members`,
@@ -177,15 +183,26 @@ class ApiService {
     );
 
     this.clearCache(`group_members_${groupId}`);
+    this.clearCache(`group_info_${groupId}`);
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("groups_user_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
-
   joinGroup = async (groupId: string) => {
     const response = await axiosClient.post(`/groups/${groupId}/join`);
     this.clearCache("groups");
+    this.clearCache(`group_members_${groupId}`);
+    this.clearCache(`group_info_${groupId}`);
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("groups_user_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
-
   updateGroup = async (groupId: string, groupData: FormData) => {
     const response = await axiosClient.put(`/groups/${groupId}`, groupData, {
       headers: {
@@ -194,28 +211,51 @@ class ApiService {
     });
     this.clearCache("groups");
     this.clearCache(`group_${groupId}`);
+    this.clearCache(`group_info_${groupId}`);
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("groups_user_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
-
   leaveGroup = async (groupId: string) => {
     const response = await axiosClient.delete(`/groups/${groupId}/leave`);
     this.clearCache("groups");
+    this.clearCache(`group_members_${groupId}`);
+    this.clearCache(`group_info_${groupId}`);
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("groups_user_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
-
   removeUserFromGroup = async (groupId: string, userId: string) => {
     const response = await axiosClient.delete(`/groups/${groupId}/members/`, {
       data: { userId },
     });
 
     this.clearCache(`group_members_${groupId}`);
+    this.clearCache(`group_info_${groupId}`);
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("groups_user_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
-
   deleteGroup = async (groupId: string) => {
     const response = await axiosClient.delete(`/groups/${groupId}`);
     this.clearCache("groups");
     this.clearCache(`group_${groupId}`);
+    this.clearCache(`group_info_${groupId}`);
+    this.clearCache(`group_members_${groupId}`);
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.includes(`_${groupId}`) || key.startsWith("groups_user_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
 
@@ -240,7 +280,6 @@ class ApiService {
       }
     });
   };
-
   createSetList = async (setlistData: FormData) => {
     const response = await axiosClient.post("/setlists", setlistData, {
       headers: {
@@ -248,6 +287,16 @@ class ApiService {
       },
     });
     this.clearSetlistsCache();
+    const groupId = response.data?.groupId;
+    if (groupId) {
+      this.clearCache(`setlists_group_${groupId}`);
+      this.clearCache(`group_info_${groupId}`);
+    }
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("setlists_group_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
 
@@ -278,7 +327,6 @@ class ApiService {
     ApiService.globalCache[cacheKey] = response.data;
     return response.data;
   };
-
   updateSetList = async (id: string, setlistData: FormData) => {
     const response = await axiosClient.put(`/setlists/${id}`, setlistData, {
       headers: {
@@ -286,17 +334,25 @@ class ApiService {
       },
     });
     this.clearSetlistsCache();
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("setlists_group_") || key.startsWith("group_info_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
-
   deleteSetList = async (id: string) => {
     const response = await axiosClient.delete(`/setlists/${id}`);
     this.clearSetlistsCache();
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("setlists_group_") || key.startsWith("group_info_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
 
   // ===== SETLIST MÚSICAS =====
-
   addMusicToSetList = async (
     setlistId: string,
     musicId: string,
@@ -307,14 +363,23 @@ class ApiService {
       { order }
     );
     this.clearCache(`setlist_${setlistId}`);
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("setlists_group_") || key.startsWith("group_info_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
-
   removeMusicFromSetList = async (setlistId: string, musicId: string) => {
     const response = await axiosClient.delete(
       `/setlists/${setlistId}/musics/${musicId}`
     );
     this.clearCache(`setlist_${setlistId}`);
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("setlists_group_") || key.startsWith("group_info_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
 
@@ -342,7 +407,6 @@ class ApiService {
       }
     });
   };
-
   createMusic = async (groupId: string, musicData: FormData) => {
     const response = await axiosClient.post(
       `/groups/${groupId}/musics`,
@@ -355,6 +419,7 @@ class ApiService {
     );
     this.clearMusicsCache();
     this.clearCache(`musics_group_${groupId}`);
+    this.clearCache(`group_info_${groupId}`);
     return response.data;
   };
 
@@ -398,7 +463,6 @@ class ApiService {
     ApiService.globalCache[cacheKey] = response.data;
     return response.data;
   };
-
   updateMusic = async (id: string, musicData: FormData) => {
     const response = await axiosClient.put(`/musics/${id}`, musicData, {
       headers: {
@@ -406,12 +470,21 @@ class ApiService {
       },
     });
     this.clearMusicsCache();
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("musics_group_") || key.startsWith("group_info_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
-
   deleteMusic = async (id: string) => {
     const response = await axiosClient.delete(`/musics/${id}`);
     this.clearMusicsCache();
+    Object.keys(ApiService.globalCache).forEach((key) => {
+      if (key.startsWith("musics_group_") || key.startsWith("group_info_")) {
+        this.clearCache(key);
+      }
+    });
     return response.data;
   };
 
@@ -451,11 +524,33 @@ export const useApi = () => {
     if (refreshToken > 0) {
       api.clearAllCache();
     }
-  }, [refreshToken, api]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshToken]);
+
+  const clearSpecificCache = useCallback(
+    (key: string) => {
+      api.clearCache(key);
+    },
+    [api]
+  );
+  const clearAllGroupCaches = useCallback(() => {
+    api.clearGroupsCache();
+    Object.keys(ApiService.getGlobalCache()).forEach((key) => {
+      if (
+        key.startsWith("groups_user_") ||
+        key.startsWith("group_info_") ||
+        key.startsWith("group_members_")
+      ) {
+        api.clearCache(key);
+      }
+    });
+  }, [api]);
 
   return {
     ...api,
     invalidateCache,
+    clearSpecificCache,
+    clearAllGroupCaches,
   };
 };
 

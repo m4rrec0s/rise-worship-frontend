@@ -58,11 +58,10 @@ const GroupCard = ({ group }: GroupCardProps) => {
         console.error("Error checking membership:", error);
       }
     };
-
     if (group.id) {
       checkMembership();
     }
-  }, [group.id, api]);
+  }, [group.id]);
 
   const handleClick = () => {
     if (isMember) {

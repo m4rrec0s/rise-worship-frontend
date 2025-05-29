@@ -84,8 +84,10 @@ const CreateGroupPage = () => {
       if (imageFile) {
         groupFormData.append("image", imageFile);
       }
-
       const response = await api.createGroup(groupFormData);
+
+      // Invalidar todos os caches relacionados a grupos
+      api.clearAllGroupCaches();
 
       toast.success("Grupo criado com sucesso!");
       router.push(`/groups/${response.id}`);
