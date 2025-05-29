@@ -59,6 +59,7 @@ const AddMusicPage = () => {
       }
     };
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -91,7 +92,6 @@ const AddMusicPage = () => {
         });
         toast.success("Música removida da setlist");
       } else {
-        // Envia order: 0 por padrão
         await api.addMusicToSetList(setlistId, musicId, 0);
         setSelectedMusicIds((prev) => {
           const newSet = new Set(prev);
@@ -107,6 +107,7 @@ const AddMusicPage = () => {
   };
 
   const handleBackToSetlist = () => {
+    api.clearSetlistsCache();
     router.push(`/groups/${groupId}/setlist/${setlistId}`);
   };
 

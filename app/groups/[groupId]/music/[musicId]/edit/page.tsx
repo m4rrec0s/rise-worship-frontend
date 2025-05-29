@@ -55,9 +55,8 @@ export default function EditMusicPage() {
       try {
         setIsLoading(true);
 
-        // Carregar os dados da música
         const musicData = await api.getMusicById(musicId);
-        setMusic(musicData); // Preencher o formulário com os dados da música
+        setMusic(musicData);
         setFormData({
           title: musicData.title || "",
           author: musicData.author || "",
@@ -77,7 +76,6 @@ export default function EditMusicPage() {
           setPreviewImage(musicData.thumbnail);
         }
 
-        // Verificar permissão do usuário
         if (user && groupId) {
           const members = await api.getGroupMembers(groupId);
           const currentUser = members.find(
@@ -88,7 +86,6 @@ export default function EditMusicPage() {
           if (currentUser) {
             setUserPermission(currentUser.permission);
 
-            // Redirecionar se não tiver permissão adequada
             if (
               currentUser.permission !== "admin" &&
               currentUser.permission !== "view"
@@ -397,16 +394,6 @@ export default function EditMusicPage() {
           </CardContent>
         </Card>{" "}
         <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() =>
-              router.push(`/groups/${groupId}/music/${musicId}/edit-cipher`)
-            }
-            className="mr-auto"
-          >
-            Editar Cifra
-          </Button>
           <Button variant="outline" asChild disabled={isSaving}>
             <Link href={`/groups/${groupId}/music/${musicId}`}>Cancelar</Link>
           </Button>

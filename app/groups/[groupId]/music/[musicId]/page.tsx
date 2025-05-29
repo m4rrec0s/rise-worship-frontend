@@ -13,20 +13,20 @@ import { useAuth } from "@/app/context/auth-context";
 import { Switch } from "@/app/components/ui/switch";
 import { Label } from "@/app/components/ui/label";
 
-interface ChordSegment {
-  chord: string;
-  lineIndex: number;
-  charOffset: number;
+interface ChordLine {
+  id: string;
+  chords: string;
+  lyrics: string;
+  lyricsLineIndex: number;
 }
 
 interface Cipher {
   key: string;
-  segments: ChordSegment[];
+  chordLines: ChordLine[];
 }
 
 const MusicPage = () => {
   const params = useParams();
-  const router = useRouter();
   const musicId = params.musicId as string;
   const groupId = params.groupId as string;
   const { getMusicById, getGroupMembers } = useApi();
@@ -43,11 +43,26 @@ const MusicPage = () => {
         setIsLoading(true);
         const musicData = await getMusicById(musicId);
         setMusic(musicData);
-
         if (musicData.cipher) {
           try {
-            const cipherData = JSON.parse(musicData.cipher) as Cipher;
-            setParsedCipher(cipherData);
+            const cipherData = JSON.parse(musicData.cipher);
+
+            if (Array.isArray(cipherData.segments)) {
+              const convertedCipher: Cipher = {
+                key: cipherData.key || "C",
+                chordLines: cipherData.segments.map(
+                  (segment: { chord: string; lineIndex: number }) => ({
+                    id: Math.random().toString(36).substr(2, 9),
+                    chords: segment.chord,
+                    lyrics: "",
+                    lyricsLineIndex: segment.lineIndex,
+                  })
+                ),
+              };
+              setParsedCipher(convertedCipher);
+            } else if (Array.isArray(cipherData.chordLines)) {
+              setParsedCipher(cipherData as Cipher);
+            }
           } catch (error) {
             console.error("Erro ao parsear a cifra:", error);
           }
@@ -73,59 +88,61 @@ const MusicPage = () => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [musicId, groupId, user]);
-
   const renderLyricsWithChords = () => {
-    if (!music || !music.lyrics || !parsedCipher || !parsedCipher.segments) {
+    if (!music || !music.lyrics) {
       return music?.lyrics || "";
     }
 
     const lines = music.lyrics.split("\n");
     const result: React.ReactNode[] = [];
 
-    const chordMap: { [lineIndex: number]: ChordSegment[] } = {};
+    if (
+      !parsedCipher ||
+      !parsedCipher.chordLines ||
+      parsedCipher.chordLines.length === 0
+    ) {
+      return (
+        <div className="whitespace-pre-wrap">
+          {lines.map((line, index) => (
+            <div key={`line-${index}`} className="mb-2">
+              {line.toLowerCase()}
+            </div>
+          ))}
+        </div>
+      );
+    }
 
-    parsedCipher.segments.forEach((segment) => {
-      if (!chordMap[segment.lineIndex]) {
-        chordMap[segment.lineIndex] = [];
+    const chordsByLine: { [lineIndex: number]: ChordLine[] } = {};
+
+    parsedCipher.chordLines.forEach((chordLine) => {
+      if (!chordsByLine[chordLine.lyricsLineIndex]) {
+        chordsByLine[chordLine.lyricsLineIndex] = [];
       }
-      chordMap[segment.lineIndex].push(segment);
-    });
-
-    Object.keys(chordMap).forEach((lineIndex) => {
-      chordMap[Number(lineIndex)].sort((a, b) => a.charOffset - b.charOffset);
+      chordsByLine[chordLine.lyricsLineIndex].push(chordLine);
     });
 
     lines.forEach((line, lineIndex) => {
-      if (chordMap[lineIndex] && chordMap[lineIndex].length > 0) {
-        let chordLine = "";
-        let lastOffset = 0;
-
-        chordMap[lineIndex].forEach((segment) => {
-          while (chordLine.length < segment.charOffset) {
-            chordLine += " ";
-          }
-          chordLine += segment.chord;
-          lastOffset = segment.charOffset + segment.chord.length;
+      if (chordsByLine[lineIndex]) {
+        chordsByLine[lineIndex].forEach((chordLine, chordIndex) => {
+          result.push(
+            <div
+              key={`chord-${lineIndex}-${chordIndex}`}
+              className="text-orange-500 font-mono font-medium text-sm mb-1 whitespace-pre"
+            >
+              {chordLine.chords}
+            </div>
+          );
         });
-
-        result.push(
-          <div
-            key={`chord-${lineIndex}`}
-            className="text-orange-500 font-mono font-medium"
-          >
-            {chordLine}
-          </div>
-        );
       }
 
       result.push(
-        <div key={`line-${lineIndex}`} className="mb-1">
-          {line}
+        <div key={`line-${lineIndex}`} className="mb-2">
+          {line.toLowerCase()}
         </div>
       );
     });
 
-    return <>{result}</>;
+    return <div className="whitespace-pre-wrap">{result}</div>;
   };
 
   const canEditMusic = userPermission === "admin" || userPermission === "edit";
@@ -140,25 +157,36 @@ const MusicPage = () => {
   return (
     <section className="bg-gray-100 dark:bg-neutral-950">
       <div className="container mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between max-sm:flex-col sm:items-center mb-6 gap-2">
           <Button
             variant={"link"}
-            onClick={() => router.back()}
-            className="p-0"
+            className="p-0 max-sm:items-start w-fit"
+            asChild
           >
-            <div className="text-orange-600 flex items-center hover:underline hover:cursor-pointer">
-              <ChevronLeft className="text-orange-600 mr-2" size={36} />
-              <h1 className="text-3xl font-bold">Detalhes da Música</h1>
-            </div>
-          </Button>
-
+            <Link href={"/groups/" + groupId}>
+              <div className="flex items-center hover:underline hover:cursor-pointer">
+                <ChevronLeft className="text-orange-600 mr-2" size={36} />
+                <h1 className="text-3xl font-bold text-orange-600">
+                  Detalhes da Música
+                </h1>
+              </div>
+            </Link>
+          </Button>{" "}
           {canEditMusic && music && (
-            <Button asChild className="bg-orange-500 hover:bg-orange-600">
-              <Link href={`/groups/${groupId}/music/${musicId}/edit`}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar Música
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild variant="outline">
+                <Link href={`/groups/${groupId}/music/${musicId}/edit-cipher`}>
+                  <Music2 className="mr-2 h-4 w-4" />
+                  Editar Cifra
+                </Link>
+              </Button>
+              <Button asChild className="bg-orange-500 hover:bg-orange-600">
+                <Link href={`/groups/${groupId}/music/${musicId}/edit`}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar Música
+                </Link>
+              </Button>
+            </div>
           )}
         </div>
 

@@ -181,7 +181,6 @@ export default function GroupPage() {
     loadMusics(1, 5, "");
   };
 
-  // permissão
   const handlePermissionChange = async (
     userId: string,
     newPermission: string
@@ -215,7 +214,6 @@ export default function GroupPage() {
       console.error("Erro ao remover membro:", error);
     }
   };
-  // Estado para controlar a visibilidade do modal
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   const confirmLeaveGroup = async () => {

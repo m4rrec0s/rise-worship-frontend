@@ -27,7 +27,7 @@ const SetListPage = () => {
   const [setlist, setSetlist] = useState<Setlist | null>(null);
   const { user } = useAuth();
   const [permission, setPermission] = useState<string | null>(null);
-  const {} = useApi();
+  const { clearSetlistsCache } = useApi();
 
   const groupId = params.groupId as string;
   const setlistId = params.setlistId as string;
@@ -59,7 +59,8 @@ const SetListPage = () => {
   }, [setlistId]);
 
   const handleBack = () => {
-    router.back();
+    clearSetlistsCache();
+    router.push(`/groups/${groupId}`);
   };
 
   return (

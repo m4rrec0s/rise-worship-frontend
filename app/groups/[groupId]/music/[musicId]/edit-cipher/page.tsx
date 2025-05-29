@@ -22,22 +22,23 @@ import {
 } from "@/app/components/ui/select";
 import { Label } from "@/app/components/ui/label";
 import { LoadingIcon } from "@/app/components/loading-icon";
-import { ChevronLeft, Loader2, Save } from "lucide-react";
+import { ChevronLeft, Loader2, Save, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
-import Editor from "react-simple-code-editor";
 import { transpose, keys } from "@hrgui/chord-charts";
+import { Input } from "@/app/components/ui/input";
 
-interface ChordSegment {
-  chord: string;
-  lineIndex: number;
-  charOffset: number;
+interface ChordLine {
+  id: string;
+  chords: string;
+  lyrics: string;
+  lyricsLineIndex: number;
 }
 
 interface Cipher {
   key: string;
-  segments: ChordSegment[];
+  chordLines: ChordLine[];
 }
 
 const chordRegex =
@@ -66,69 +67,8 @@ function KeysSelect({
   );
 }
 
-function extractChords(text: string): ChordSegment[] {
-  const lines = text.split("\n");
-  const segments: ChordSegment[] = [];
-
-  lines.forEach((line, lineIndex) => {
-    let match;
-    chordRegex.lastIndex = 0;
-
-    while ((match = chordRegex.exec(line)) !== null) {
-      segments.push({
-        chord: match[0],
-        lineIndex,
-        charOffset: match.index,
-      });
-    }
-  });
-
-  return segments;
-}
-
-function reconstructCipherText(
-  lyrics: string,
-  segments: ChordSegment[],
-  originalKey: string,
-  currentKey: string
-): string {
-  const lines = lyrics.split("\n");
-
-  const chordLines: string[] = Array(lines.length).fill("");
-
-  segments.forEach((segment) => {
-    const transposedChord =
-      originalKey !== currentKey
-        ? transpose(segment.chord, originalKey, currentKey)
-        : segment.chord;
-
-    while (chordLines.length <= segment.lineIndex) {
-      chordLines.push("");
-    }
-
-    while (chordLines[segment.lineIndex].length < segment.charOffset) {
-      chordLines[segment.lineIndex] += " ";
-    }
-
-    chordLines[segment.lineIndex] =
-      chordLines[segment.lineIndex].substring(0, segment.charOffset) +
-      transposedChord +
-      chordLines[segment.lineIndex].substring(
-        segment.charOffset + transposedChord.length
-      );
-  });
-
-  const combined: string[] = [];
-  for (let i = 0; i < Math.max(chordLines.length, lines.length); i++) {
-    if (chordLines[i] && chordLines[i].trim()) {
-      combined.push(chordLines[i]);
-    }
-    if (lines[i] !== undefined) {
-      combined.push(lines[i]);
-    }
-  }
-
-  return combined.join("\n");
+function generateId(): string {
+  return Math.random().toString(36).substr(2, 9);
 }
 
 export default function CipherEditPage() {
@@ -144,12 +84,10 @@ export default function CipherEditPage() {
   const [music, setMusic] = useState<Music | null>(null);
   const [userPermission, setUserPermission] = useState<string | null>(null);
 
-  const [lyrics, setLyrics] = useState("");
   const [originalKey, setOriginalKey] = useState("C");
   const [currentKey, setCurrentKey] = useState("C");
-  const [cipherText, setCipherText] = useState("");
-  const [segments, setSegments] = useState<ChordSegment[]>([]);
-
+  const [chordLines, setChordLines] = useState<ChordLine[]>([]);
+  const [lyricsLines, setLyricsLines] = useState<string[]>([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -157,41 +95,44 @@ export default function CipherEditPage() {
 
         const musicData = await api.getMusicById(musicId);
         setMusic(musicData);
-        setLyrics(musicData.lyrics || "");
 
+        const lyrics = musicData.lyrics || "";
+        const linesArray = lyrics.split("\n");
+        setLyricsLines(linesArray);
         if (musicData.cipher) {
           try {
-            const cipherData = JSON.parse(musicData.cipher) as Cipher;
+            const cipherData = JSON.parse(musicData.cipher);
 
             if (cipherData.key) {
               setOriginalKey(cipherData.key);
               setCurrentKey(cipherData.key);
             }
-
-            if (
-              Array.isArray(cipherData.segments) &&
-              cipherData.segments.length > 0
-            ) {
-              setSegments(cipherData.segments);
-              const text = reconstructCipherText(
-                musicData.lyrics || "",
-                cipherData.segments,
-                cipherData.key,
-                cipherData.key
+            if (Array.isArray(cipherData.segments)) {
+              console.log("Detectado formato antigo de cifra, convertendo...");
+              const convertedChordLines: ChordLine[] = cipherData.segments.map(
+                (
+                  segment: { chord: string; lineIndex: number },
+                  index: number
+                ) => ({
+                  id: generateId(),
+                  chords: segment.chord,
+                  lyrics: "",
+                  lyricsLineIndex: segment.lineIndex,
+                })
               );
-              setCipherText(text);
-            } else {
-              setCipherText(musicData.lyrics || "");
+              setChordLines(convertedChordLines);
+            } else if (Array.isArray(cipherData.chordLines)) {
+              console.log("Carregando cifra no formato novo");
+              setChordLines(cipherData.chordLines);
             }
           } catch (e) {
-            setCipherText(musicData.lyrics || "");
-            const extractedSegments = extractChords(musicData.cipher);
-            if (extractedSegments.length > 0) {
-              setSegments(extractedSegments);
-            }
+            console.error("Erro ao parsear cifra:", e);
           }
-        } else {
-          setCipherText(musicData.lyrics || "");
+        }
+
+        if (musicData.tone && !musicData.cipher) {
+          setOriginalKey(musicData.tone);
+          setCurrentKey(musicData.tone);
         }
 
         if (user && groupId) {
@@ -228,24 +169,54 @@ export default function CipherEditPage() {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, musicId, user]);
-
   const handleKeyChange = (newKey: string) => {
     if (newKey === currentKey) return;
 
+    const oldKey = currentKey;
     setCurrentKey(newKey);
 
-    if (segments.length > 0) {
-      const text = reconstructCipherText(lyrics, segments, originalKey, newKey);
-      setCipherText(text);
-    }
+    const transposedChordLines = chordLines.map((chordLine) => ({
+      ...chordLine,
+      chords: chordLine.chords.replace(chordRegex, (match) => {
+        try {
+          return transpose(match, oldKey, newKey);
+        } catch (error) {
+          console.error("Erro ao transpor acorde:", match, error);
+          return match;
+        }
+      }),
+    }));
+
+    setChordLines(transposedChordLines);
+  };
+  const addChordLine = () => {
+    const newChordLine: ChordLine = {
+      id: generateId(),
+      chords: "",
+      lyrics: "",
+      lyricsLineIndex: 0,
+    };
+    const updatedChordLines = [...chordLines, newChordLine];
+    console.log("Adicionando nova linha de cifra:", newChordLine);
+    console.log("Total de linhas após adicionar:", updatedChordLines.length);
+    setChordLines(updatedChordLines);
   };
 
-  const handleCipherChange = (value: string) => {
-    setCipherText(value);
-    const newSegments = extractChords(value);
-    setSegments(newSegments);
+  const removeChordLine = (id: string) => {
+    setChordLines(chordLines.filter((line) => line.id !== id));
   };
-
+  const updateChordLine = (
+    id: string,
+    field: keyof ChordLine,
+    value: string | number
+  ) => {
+    const updatedChordLines = chordLines.map((line) =>
+      line.id === id ? { ...line, [field]: value } : line
+    );
+    console.log(`Atualizando campo ${field} da linha ${id}:`, value);
+    console.log("Estado atualizado das linhas:", updatedChordLines);
+    setChordLines(updatedChordLines);
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -254,11 +225,14 @@ export default function CipherEditPage() {
 
       const cipherData: Cipher = {
         key: currentKey,
-        segments: segments,
+        chordLines: chordLines,
       };
+
+      console.log("Dados da cifra sendo enviados:", cipherData);
 
       const musicData = new FormData();
       musicData.append("cipher", JSON.stringify(cipherData));
+      musicData.append("tone", currentKey);
 
       await api.updateMusic(musicId, musicData);
 
@@ -276,12 +250,62 @@ export default function CipherEditPage() {
     }
   };
 
-  const highlightWithLineNumbers = (code: string) => {
-    return code.replace(
-      chordRegex,
-      (match) =>
-        `<span style="color: #f97316; font-weight: bold;">${match}</span>`
-    );
+  const renderFullCipherPreview = () => {
+    if (!music || !music.lyrics) {
+      return (
+        <div className="text-gray-500">Letra da música não encontrada.</div>
+      );
+    }
+
+    const lines = music.lyrics.split("\n");
+    const result: React.ReactNode[] = [];
+
+    if (chordLines.length === 0) {
+      return (
+        <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-200">
+          {lines.map((line, index) => (
+            <div key={`line-${index}`} className="mb-2">
+              {line.toLowerCase()}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    const chordsByLine: { [lineIndex: number]: ChordLine[] } = {};
+
+    chordLines.forEach((chordLine) => {
+      if (!chordsByLine[chordLine.lyricsLineIndex]) {
+        chordsByLine[chordLine.lyricsLineIndex] = [];
+      }
+      chordsByLine[chordLine.lyricsLineIndex].push(chordLine);
+    });
+
+    lines.forEach((line, lineIndex) => {
+      if (chordsByLine[lineIndex]) {
+        chordsByLine[lineIndex].forEach((chordLine, chordIndex) => {
+          result.push(
+            <div
+              key={`chord-${lineIndex}-${chordIndex}`}
+              className="text-orange-500 font-mono font-medium text-sm mb-1 whitespace-pre"
+            >
+              {chordLine.chords}
+            </div>
+          );
+        });
+      }
+
+      result.push(
+        <div
+          key={`line-${lineIndex}`}
+          className="mb-2 text-gray-700 dark:text-gray-200"
+        >
+          {line.toLowerCase()}
+        </div>
+      );
+    });
+
+    return <div className="whitespace-pre-wrap">{result}</div>;
   };
 
   if (isLoading) {
@@ -295,59 +319,145 @@ export default function CipherEditPage() {
   return (
     <div className="container mx-auto py-8 px-5">
       <div className="flex items-center gap-2 mb-8">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/groups/${groupId}/music/${musicId}`}>
-            <ChevronLeft className="h-5 w-5" />
-          </Link>
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <ChevronLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-2xl font-bold">Editar Cifra</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Cifra da Música: {music?.title}</CardTitle>
-            <CardDescription>
-              Adicione ou edite a cifra da música. Os acordes serão
-              automaticamente detectados e destacados.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="tonalidade">Tom da Cifra</Label>
-              <div className="w-full sm:w-1/3">
-                <KeysSelect value={currentKey} onChange={handleKeyChange} />
+        {" "}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Editar Cifra: {music?.title}</CardTitle>
+              <CardDescription>
+                Configure o tom e adicione acordes às linhas da música
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="tonalidade">Tom da Cifra</Label>
+                <div className="w-full sm:w-2/3">
+                  <KeysSelect value={currentKey} onChange={handleKeyChange} />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Mudar o tom transporá todos os acordes automaticamente
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Mudar o tom transporá todos os acordes da cifra.
-              </p>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="cipher">Editor de Cifra</Label>
-              <div className="border rounded-md">
-                <Editor
-                  value={cipherText}
-                  onValueChange={handleCipherChange}
-                  highlight={(code) => highlightWithLineNumbers(code)}
-                  padding={16}
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "14px",
-                    minHeight: "400px",
-                  }}
-                  className="w-full"
-                />
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label>Campos de Cifra ({chordLines.length})</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addChordLine}
+                    className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {chordLines.map((chordLine, index) => (
+                    <div
+                      key={chordLine.id}
+                      className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-900"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-gray-500 min-w-[20px]">
+                              #{index + 1}
+                            </span>
+                            <Input
+                              value={chordLine.chords}
+                              onChange={(e) =>
+                                updateChordLine(
+                                  chordLine.id,
+                                  "chords",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Ex: C Am F G"
+                              className="font-mono text-sm h-8"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 min-w-[20px]">
+                              L:
+                            </span>
+                            <Select
+                              value={chordLine.lyricsLineIndex.toString()}
+                              onValueChange={(value) =>
+                                updateChordLine(
+                                  chordLine.id,
+                                  "lyricsLineIndex",
+                                  parseInt(value)
+                                )
+                              }
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Linha..." />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-40">
+                                {lyricsLines.map((line, lineIndex) => (
+                                  <SelectItem
+                                    key={lineIndex}
+                                    value={lineIndex.toString()}
+                                  >
+                                    {lineIndex + 1}: {line.substring(0, 25)}
+                                    {line.length > 25 ? "..." : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeChordLine(chordLine.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {chordLines.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-sm">Nenhum campo de cifra criado</p>
+                      <p className="text-xs">
+                        Clique em &quot;Adicionar&quot; para começar
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Digite a cifra usando a notação padrão (Ex: C, Am, G/B). Os
-                acordes serão detectados automaticamente.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <div className="flex justify-end gap-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Preview em Tempo Real</CardTitle>
+              <CardDescription>
+                Veja como a cifra aparecerá na página da música
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-white dark:bg-black border rounded-lg p-4 max-h-96 overflow-y-auto">
+                {renderFullCipherPreview()}
+              </div>
+            </CardContent>
+          </Card>
+        </div>{" "}
+        <div className="flex justify-end gap-3 pt-4">
           <Button variant="outline" asChild disabled={isSaving}>
             <Link href={`/groups/${groupId}/music/${musicId}`}>Cancelar</Link>
           </Button>
