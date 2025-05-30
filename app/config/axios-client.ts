@@ -9,13 +9,12 @@ const axiosClient = axios.create({
   },
 });
 
-// Interceptor para adicionar o token de autenticação em todas as requisições
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("idToken");
+    const sessionToken = localStorage.getItem("sessionToken");
 
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (sessionToken && config.headers) {
+      config.headers.Authorization = `Bearer ${sessionToken}`;
     }
 
     return config;
@@ -25,16 +24,13 @@ axiosClient.interceptors.request.use(
   }
 );
 
-// Interceptor para tratamento global de erros
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Se o token expirou ou é inválido (401)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem("idToken");
+      localStorage.removeItem("sessionToken");
       localStorage.removeItem("firebaseUid");
 
-      // Redirecionar para login se necessário
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }

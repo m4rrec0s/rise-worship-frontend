@@ -11,16 +11,14 @@ interface MusicItemProps {
 }
 
 const MusicItem = ({ groupId, item, className = "" }: MusicItemProps) => {
-  // Determinar se é um item de SetlistMusic ou Music
   const isSetlistMusic = "order" in item;
 
-  // Obter os dados da música
   const musicData: Music | undefined = isSetlistMusic
     ? (item as SetlistMusic).music
     : (item as Music);
 
   if (!musicData) {
-    return null; // Não renderiza nada se não tiver dados da música
+    return null;
   }
 
   return (

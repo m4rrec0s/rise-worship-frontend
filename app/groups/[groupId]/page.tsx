@@ -84,9 +84,7 @@ export default function GroupPage() {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [permission, setPermission] = useState("");
-  // Função para recarregar dados do grupo
   const reloadGroupData = useCallback(async () => {
-    // Limpar caches antes de recarregar
     api.clearSpecificCache(`group_${groupId}`);
     api.clearSpecificCache(`group_members_${groupId}`);
     api.clearSpecificCache(`setlists_group_${groupId}`);
@@ -167,11 +165,9 @@ export default function GroupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, user?.id]);
 
-  // Listener para detectar quando o usuário volta para a página
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Usuário voltou para a página, recarregar dados
         reloadGroupData();
       }
     };
@@ -183,11 +179,9 @@ export default function GroupPage() {
     };
   }, [reloadGroupData]);
 
-  // Listener para detectar quando o usuário volta para a página
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Usuário voltou para a página, recarregar dados
         reloadGroupData();
       }
     };

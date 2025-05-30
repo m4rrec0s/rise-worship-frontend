@@ -62,6 +62,71 @@ class ApiService {
     return response.data;
   };
 
+  // ===== GERENCIAMENTO DE SESSÕES =====
+  sessionLogin = async (sessionToken: string) => {
+    const response = await axiosClient.post("/auth/session-login", {
+      sessionToken,
+    });
+    return response.data;
+  };
+
+  createExtendedToken = async (durationInDays: number = 30) => {
+    const response = await axiosClient.post("/auth/extended-token", {
+      durationInDays,
+    });
+    return response.data;
+  };
+
+  logout = async (sessionToken: string) => {
+    const response = await axiosClient.post("/auth/logout", { sessionToken });
+    return response.data;
+  };
+
+  logoutAll = async () => {
+    const response = await axiosClient.post("/auth/logout-all");
+    return response.data;
+  };
+
+  // ===== VERIFICAÇÃO E MIGRAÇÃO DE TOKENS =====
+  checkAndMigrateTokens = async () => {
+    const oldIdToken = localStorage.getItem("idToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (oldIdToken && !sessionToken) {
+      try {
+        const response = await axiosClient.get("/auth/me", {
+          headers: { Authorization: `Bearer ${oldIdToken}` },
+        });
+
+        if (response.data.user) {
+          const extendedResponse = await axiosClient.post(
+            "/auth/extended-token",
+            {
+              durationInDays: 90,
+            },
+            {
+              headers: { Authorization: `Bearer ${oldIdToken}` },
+            }
+          );
+
+          localStorage.setItem(
+            "sessionToken",
+            extendedResponse.data.sessionToken
+          );
+          localStorage.removeItem("idToken");
+
+          console.log("Token migrado com sucesso para sessionToken");
+          return extendedResponse.data;
+        }
+      } catch (error) {
+        console.warn("Não foi possível migrar o token antigo:", error);
+        localStorage.removeItem("idToken");
+      }
+    }
+
+    return null;
+  };
+
   // ===== USUÁRIOS =====
   updateUser = async (userData: FormData) => {
     const response = await axiosClient.put("/user/profile", userData, {
@@ -545,12 +610,16 @@ export const useApi = () => {
       }
     });
   }, [api]);
-
   return {
     ...api,
     invalidateCache,
     clearSpecificCache,
     clearAllGroupCaches,
+    sessionLogin: api.sessionLogin,
+    createExtendedToken: api.createExtendedToken,
+    logout: api.logout,
+    logoutAll: api.logoutAll,
+    checkAndMigrateTokens: api.checkAndMigrateTokens,
   };
 };
 

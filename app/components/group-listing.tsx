@@ -39,7 +39,7 @@ export function GroupListing() {
       if (!user) {
         toast.error("Usuário não encontrado");
         return;
-      } // Limpar cache antes de recarregar
+      }
       api.clearAllGroupCaches();
 
       const response = await api.getGroupsByUserId(user.id);
@@ -116,11 +116,9 @@ export function GroupListing() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Listener para detectar quando o usuário volta para a página
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
-        // Usuário voltou para a página, recarregar dados
         fetchGroups();
       }
     };

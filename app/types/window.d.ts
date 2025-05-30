@@ -1,4 +1,3 @@
-// Declarações de tipos globais
 interface RiseWorshipSearch {
   activate: (query: string) => void;
   deactivate: () => void;

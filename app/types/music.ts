@@ -11,7 +11,7 @@ export interface Music {
   tone: string;
   cipher?: string;
   author: string;
-  links: Record<string, string>; // Para representar o campo Json
+  links: Record<string, string>;
   thumbnail?: string;
   categoryId?: string;
   tags: string[];

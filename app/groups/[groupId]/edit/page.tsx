@@ -96,7 +96,6 @@ export default function EditGroupPage() {
         description: groupData.description || "",
       });
 
-      // Definir imagem atual como preview se existir
       if (groupData.imageUrl) {
         setPreviewImage(groupData.imageUrl);
       }

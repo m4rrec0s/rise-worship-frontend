@@ -16,21 +16,17 @@ export default function Home() {
 
   useEffect(() => {}, [isAuthenticated, router, user]);
 
-  // Função para ativar o modo de pesquisa
   const activateSearch = (query: string) => {
     setSearchQuery(query);
     setIsSearchActive(true);
   };
 
-  // Função para desativar o modo de pesquisa
   const deactivateSearch = () => {
     setSearchQuery("");
     setIsSearchActive(false);
   };
 
-  // Expose the search functions to the global window object
   useEffect(() => {
-    // Define o objeto window com as funções de pesquisa
     if (typeof window !== "undefined") {
       window.riseWorshipSearch = {
         activate: activateSearch,
@@ -38,7 +34,6 @@ export default function Home() {
       };
     }
 
-    // Cleanup function when component unmounts
     return () => {
       if (typeof window !== "undefined" && window.riseWorshipSearch) {
         delete window.riseWorshipSearch;

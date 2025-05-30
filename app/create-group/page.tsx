@@ -43,13 +43,11 @@ const CreateGroupPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Verificar tipo de arquivo
     if (!file.type.startsWith("image/")) {
       toast.error("Por favor, selecione uma imagem válida");
       return;
     }
 
-    // Verificar tamanho (5MB máximo)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Imagem muito grande. Máximo de 5MB.");
       return;
@@ -57,7 +55,6 @@ const CreateGroupPage = () => {
 
     setImageFile(file);
 
-    // Criar preview da imagem
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
@@ -76,7 +73,6 @@ const CreateGroupPage = () => {
     try {
       setLoading(true);
 
-      // Criar FormData para enviar dados + arquivo
       const groupFormData = new FormData();
       groupFormData.append("name", formData.name);
       groupFormData.append("description", formData.description);
@@ -86,7 +82,6 @@ const CreateGroupPage = () => {
       }
       const response = await api.createGroup(groupFormData);
 
-      // Invalidar todos os caches relacionados a grupos
       api.clearAllGroupCaches();
 
       toast.success("Grupo criado com sucesso!");

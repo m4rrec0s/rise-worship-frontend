@@ -40,5 +40,6 @@ export interface GoogleAuthData {
 export interface AuthResponse {
   user: User;
   idToken: string;
+  sessionToken: string;
   firebaseUid: string;
 }

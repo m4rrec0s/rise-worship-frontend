@@ -35,6 +35,8 @@ interface AuthContextProps {
   ) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
+  sessionLogin: (sessionToken: string) => Promise<void>;
+  logoutAll: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -61,17 +63,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const idToken = localStorage.getItem("idToken");
+        const sessionToken = localStorage.getItem("sessionToken");
         const firebaseUid = localStorage.getItem("firebaseUid");
 
-        if (!idToken || !firebaseUid) {
+        if (!sessionToken || !firebaseUid) {
           setIsLoading(false);
           setIsInitialized(true);
           return;
         }
 
         const response = await axiosClient.get("/auth/me", {
-          headers: { Authorization: `Bearer ${idToken}` },
+          headers: { Authorization: `Bearer ${sessionToken}` },
         });
 
         if (response.data.user) {
@@ -81,18 +83,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             "API retornou resposta sem dados de usuário:",
             response.data
           );
-          localStorage.removeItem("idToken");
+          localStorage.removeItem("sessionToken");
           localStorage.removeItem("firebaseUid");
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Erro ao verificar autenticação:", error);
-        if (error.response) {
+        const errorWithResponse = error as {
+          response?: { status: number; data: unknown };
+        };
+        if (errorWithResponse.response) {
           console.error("Detalhes do erro:", {
-            status: error.response.status,
-            data: error.response.data,
+            status: errorWithResponse.response.status,
+            data: errorWithResponse.response.data,
           });
         }
-        localStorage.removeItem("idToken");
+        localStorage.removeItem("sessionToken");
         localStorage.removeItem("firebaseUid");
       } finally {
         setIsLoading(false);
@@ -123,15 +128,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         );
 
         if (response.status === 200 && response.data.user) {
-          // Usar o token retornado pelo backend
-          localStorage.setItem("idToken", response.data.idToken);
+          localStorage.setItem("sessionToken", response.data.sessionToken);
           localStorage.setItem("firebaseUid", response.data.firebaseUid);
           setUser(response.data.user);
           router.push("/");
         }
       } catch (error: unknown) {
         const axiosError = error as {
-          response?: { status: number; data?: any };
+          response?: { status: number; data?: unknown };
         };
         console.error(
           "Erro na resposta do backend:",
@@ -158,32 +162,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   ): Promise<void> => {
     setIsLoading(true);
     try {
-      // Firebase authentication
       const userCredential = await signInWithEmailAndPassword(
         auth,
         credentials.email,
         credentials.password
       );
 
-      // Backend authentication
       const response = await axiosClient.post("/auth/login", {
         email: credentials.email,
         password: credentials.password,
       });
 
       if (response.status === 200) {
-        // Usar o token retornado pelo backend
-        localStorage.setItem("idToken", response.data.idToken);
+        localStorage.setItem("sessionToken", response.data.sessionToken);
         localStorage.setItem("firebaseUid", response.data.firebaseUid);
         setUser(response.data.user);
         router.push("/");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro no login:", error);
-      if (error.response) {
+      const errorWithResponse = error as {
+        response?: { status: number; data: unknown };
+      };
+      if (errorWithResponse.response) {
         console.error("Detalhes do erro:", {
-          status: error.response.status,
-          data: error.response.data,
+          status: errorWithResponse.response.status,
+          data: errorWithResponse.response.data,
         });
       }
       throw error;
@@ -197,8 +201,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   ): Promise<void> => {
     setIsLoading(true);
     try {
-      // O backend é responsável por criar o usuário no Firebase
-      // Não precisamos criar o usuário no Firebase aqui
       const response = await axiosClient.post("/auth/register", {
         email: credentials.email,
         password: credentials.password,
@@ -206,21 +208,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (response.status === 201) {
-        // Usar o token e firebaseUid retornados pelo backend
-        localStorage.setItem(
-          "idToken",
-          response.data.idToken || response.data.user.idToken
-        );
+        localStorage.setItem("sessionToken", response.data.sessionToken);
         localStorage.setItem("firebaseUid", response.data.firebaseUid);
         setUser(response.data.user);
         router.push("/");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro no registro:", error);
-      if (error.response) {
+      const errorWithResponse = error as {
+        response?: { status: number; data: unknown };
+      };
+      if (errorWithResponse.response) {
         console.error("Detalhes do erro:", {
-          status: error.response.status,
-          data: error.response.data,
+          status: errorWithResponse.response.status,
+          data: errorWithResponse.response.data,
         });
       }
       throw error;
@@ -229,18 +230,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    auth
-      .signOut()
-      .then(() => {
-        localStorage.removeItem("idToken");
-        localStorage.removeItem("firebaseUid");
-        setUser(null);
-        router.push("/");
-      })
-      .catch((error: unknown) => {
-        console.error("Erro ao fazer logout:" + (error as Error).message);
+  const sessionLogin = async (sessionToken: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const response = await axiosClient.post("/auth/session-login", {
+        sessionToken,
       });
+
+      if (response.status === 200 && response.data.user) {
+        localStorage.setItem("sessionToken", response.data.sessionToken);
+        localStorage.setItem("firebaseUid", response.data.firebaseUid);
+        setUser(response.data.user);
+      }
+    } catch (error: unknown) {
+      console.error("Erro no login com sessão:", error);
+      localStorage.removeItem("sessionToken");
+      localStorage.removeItem("firebaseUid");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      const sessionToken = localStorage.getItem("sessionToken");
+
+      if (sessionToken) {
+        await axiosClient.post("/auth/logout", { sessionToken });
+      }
+
+      await auth.signOut();
+
+      localStorage.removeItem("sessionToken");
+      localStorage.removeItem("firebaseUid");
+
+      setUser(null);
+
+      router.push("/");
+    } catch (error: unknown) {
+      console.error("Erro ao fazer logout:", error);
+
+      localStorage.removeItem("sessionToken");
+      localStorage.removeItem("firebaseUid");
+      setUser(null);
+      router.push("/");
+    }
+  };
+
+  const logoutAll = async (): Promise<void> => {
+    try {
+      await axiosClient.post("/auth/logout-all");
+
+      await auth.signOut();
+
+      localStorage.removeItem("sessionToken");
+      localStorage.removeItem("firebaseUid");
+
+      setUser(null);
+
+      router.push("/");
+    } catch (error: unknown) {
+      console.error("Erro ao fazer logout de todas as sessões:", error);
+
+      localStorage.removeItem("sessionToken");
+      localStorage.removeItem("firebaseUid");
+      setUser(null);
+      router.push("/");
+    }
   };
 
   const updateUser = (updatedUser: User) => {
@@ -267,6 +324,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         registerWithEmailAndPassword,
         logout,
         updateUser,
+        sessionLogin,
+        logoutAll,
       }}
     >
       {children}
