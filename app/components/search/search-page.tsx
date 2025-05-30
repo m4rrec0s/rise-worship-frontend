@@ -61,6 +61,7 @@ const GroupCard = ({ group }: GroupCardProps) => {
     if (group.id) {
       checkMembership();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group.id]);
 
   const handleClick = () => {
@@ -70,15 +71,29 @@ const GroupCard = ({ group }: GroupCardProps) => {
       setDrawerOpen(true);
     }
   };
-
   const handleJoinGroup = async () => {
     setJoining(true);
     try {
-      await api.joinGroup(group.id);
+      const members = await api.getGroupMembers(group.id, true);
+
+      const hasNoMembers =
+        !members ||
+        (Array.isArray(members) && members.length === 0) ||
+        (members.data &&
+          Array.isArray(members.data) &&
+          members.data.length === 0);
+
+      if (hasNoMembers) {
+        await api.joinGroup(group.id, "admin");
+        toast.success("Você entrou no grupo como administrador!");
+      } else {
+        await api.joinGroup(group.id);
+        toast.success("Você entrou no grupo com sucesso!");
+      }
+
       setIsMember(true);
       setDrawerOpen(false);
       router.push(`/groups/${group.id}`);
-      toast.success("Você entrou no grupo com sucesso!");
     } catch (error) {
       console.error("Error joining group:", error);
       toast.error(

@@ -82,10 +82,40 @@ const CreateGroupPage = () => {
       }
       const response = await api.createGroup(groupFormData);
 
+      console.log("Resposta completa da API:", response);
+      console.log("response.id:", response.id);
+      console.log("Chaves disponíveis:", Object.keys(response));
+
       api.clearAllGroupCaches();
 
       toast.success("Grupo criado com sucesso!");
-      router.push(`/groups/${response.id}`);
+
+      // Tentar diferentes estruturas de resposta para encontrar o ID
+      let groupId = null;
+
+      if (response.id) {
+        groupId = response.id;
+      } else if (response.data && response.data.id) {
+        groupId = response.data.id;
+      } else if (response.group && response.group.id) {
+        groupId = response.group.id;
+      } else if (response._id) {
+        groupId = response._id;
+      } else if (response.data && response.data._id) {
+        groupId = response.data._id;
+      }
+
+      console.log("ID do grupo encontrado:", groupId);
+
+      if (groupId) {
+        router.push(`/groups/${groupId}`);
+      } else {
+        console.error("Não foi possível encontrar o ID do grupo na resposta");
+        toast.error(
+          "Grupo criado, mas não foi possível navegar. Verifique a lista de grupos."
+        );
+        router.push("/groups");
+      }
     } catch (error) {
       console.error("Erro ao criar grupo:", error);
       toast.error("Não foi possível criar o grupo. Tente novamente.");

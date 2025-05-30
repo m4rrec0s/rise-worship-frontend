@@ -108,7 +108,7 @@ export default function CipherEditPage() {
               setCurrentKey(cipherData.key);
             }
             if (Array.isArray(cipherData.segments)) {
-              console.log("Detectado formato antigo de cifra, convertendo...");
+              toast.message("Detectado formato antigo de cifra, convertendo...");
               const convertedChordLines: ChordLine[] = cipherData.segments.map(
                 (
                   segment: { chord: string; lineIndex: number },
@@ -122,7 +122,7 @@ export default function CipherEditPage() {
               );
               setChordLines(convertedChordLines);
             } else if (Array.isArray(cipherData.chordLines)) {
-              console.log("Carregando cifra no formato novo");
+              toast.message("Carregando cifra no formato novo");
               setChordLines(cipherData.chordLines);
             }
           } catch (e) {
@@ -197,8 +197,6 @@ export default function CipherEditPage() {
       lyricsLineIndex: 0,
     };
     const updatedChordLines = [...chordLines, newChordLine];
-    console.log("Adicionando nova linha de cifra:", newChordLine);
-    console.log("Total de linhas após adicionar:", updatedChordLines.length);
     setChordLines(updatedChordLines);
   };
 
@@ -213,8 +211,6 @@ export default function CipherEditPage() {
     const updatedChordLines = chordLines.map((line) =>
       line.id === id ? { ...line, [field]: value } : line
     );
-    console.log(`Atualizando campo ${field} da linha ${id}:`, value);
-    console.log("Estado atualizado das linhas:", updatedChordLines);
     setChordLines(updatedChordLines);
   };
   const handleSubmit = async (e: React.FormEvent) => {
@@ -227,8 +223,6 @@ export default function CipherEditPage() {
         key: currentKey,
         chordLines: chordLines,
       };
-
-      console.log("Dados da cifra sendo enviados:", cipherData);
 
       const musicData = new FormData();
       musicData.append("cipher", JSON.stringify(cipherData));

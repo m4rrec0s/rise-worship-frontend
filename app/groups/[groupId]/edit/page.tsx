@@ -177,7 +177,6 @@ export default function EditGroupPage() {
       }
       if (selectedImage) {
         groupData.append("image", selectedImage);
-        console.log("Enviando nova imagem:", selectedImage.name);
       }
 
       await api.updateGroup(groupId, groupData);
@@ -369,17 +368,55 @@ export default function EditGroupPage() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>{" "}
                   <AlertDialogAction
                     className="bg-red-600 hover:bg-red-700"
                     onClick={async () => {
                       try {
                         setIsSaving(true);
+                        console.log("Tentando excluir grupo com ID:", groupId);
                         await api.deleteGroup(groupId);
                         toast.success("Grupo excluído com sucesso!");
                         router.push("/groups");
                       } catch (error) {
-                        toast.error("Erro ao excluir grupo");
+                        console.error(
+                          "Erro detalhado ao excluir grupo:",
+                          error
+                        );
+
+                        if (
+                          error &&
+                          typeof error === "object" &&
+                          "response" in error
+                        ) {
+                          const axiosError = error as {
+                            response?: {
+                              status?: number;
+                              data?: unknown;
+                              headers?: unknown;
+                            };
+                          };
+
+                          if (axiosError.response?.status === 400) {
+                            toast.error(
+                              "Não é possível excluir este grupo. Pode haver músicas, setlists ou membros associados."
+                            );
+                          } else if (axiosError.response?.status === 403) {
+                            toast.error(
+                              "Você não tem permissão para excluir este grupo."
+                            );
+                          } else if (axiosError.response?.status === 404) {
+                            toast.error("Grupo não encontrado.");
+                          } else {
+                            toast.error(
+                              "Erro ao excluir grupo. Tente novamente."
+                            );
+                          }
+                        } else {
+                          toast.error(
+                            "Erro ao excluir grupo. Verifique sua conexão."
+                          );
+                        }
                       } finally {
                         setIsSaving(false);
                       }

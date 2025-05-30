@@ -221,14 +221,12 @@ export default function GroupPage() {
 
   useEffect(() => {
     setMusics([]);
-    console.log("Carregando primeira página com busca:", searchQuery);
     loadMusics(1, 5, searchQuery);
   }, [loadMusics, searchQuery]);
 
   const loadMore = () => {
     if (hasMore) {
       const nextPage = page + 1;
-      console.log("Carregando mais músicas para a página:", nextPage);
       loadMusics(nextPage, 5, searchQuery);
       setPage(nextPage);
     }
@@ -458,7 +456,10 @@ export default function GroupPage() {
                         <DropdownMenuSeparator />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <DropdownMenuItem className="cursor-pointer text-xs flex items-center">
+                            <DropdownMenuItem
+                              className="cursor-pointer text-xs flex items-center"
+                              onSelect={(e) => e.preventDefault()}
+                            >
                               <DoorOpen className="mx-2 h-4 w-4" />
                               Remover Membro
                             </DropdownMenuItem>
