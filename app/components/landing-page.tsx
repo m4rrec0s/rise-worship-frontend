@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Calendar, CheckCircle, Music, Users } from "lucide-react";
+import { ArrowRight, Music, List, Users, Search, Play } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
@@ -11,240 +11,204 @@ import {
 
 export function LandingPage() {
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)]">
-      {" "}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 dark:from-slate-950 dark:via-slate-900 dark:to-orange-950/20">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden bg-gradient-to-b from-orange-50/80 dark:from-orange-950/20 to-background">
-        <div className="absolute inset-0 overflow-hidden">
-          <div
-            className="absolute left-1/2 top-0 -z-10 -translate-x-1/2 blur-3xl xl:-top-6"
-            aria-hidden="true"
-          >
-            <div
-              className="aspect-[1155/678] w-[72.1875rem] bg-gradient-to-tr from-orange-200 to-orange-400 dark:from-orange-700/30 dark:to-orange-500/40 opacity-30"
-              style={{
-                clipPath:
-                  "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
-              }}
-            />
+      <section className="relative py-24 md:py-32">
+        <div className="container mx-auto px-6 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg mb-8">
+            <Music className="h-10 w-10 text-white" />
           </div>
-        </div>{" "}
-        <div className="container mx-auto px-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30 mb-6">
-            <Music className="h-8 w-8 text-orange-500 dark:text-orange-400" />
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-            Simplify Your Worship Team Management
+
+          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-slate-900 to-orange-600 dark:from-white dark:to-orange-400 bg-clip-text text-transparent mb-6 leading-tight">
+            Rise Worship
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10">
-            Rise Worship helps you organize your songs, create setlists, and
-            collaborate with your team members - all in one place.
+
+          <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-12 leading-relaxed">
+            A plataforma perfeita para{" "}
+            <span className="text-orange-600 dark:text-orange-400 font-semibold">
+              organizar
+            </span>{" "}
+            suas músicas e{" "}
+            <span className="text-orange-600 dark:text-orange-400 font-semibold">
+              colaborar
+            </span>{" "}
+            com sua equipe de louvor
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Button
               asChild
               size="lg"
-              className="bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white"
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <Link href="/register">
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
+                Começar Agora
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="dark:border-orange-800 dark:text-orange-100"
+              className="border-2 border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30 font-semibold px-8 py-3 rounded-xl"
             >
-              <Link href="/login">Sign In</Link>
+              <Link href="/login">Fazer Login</Link>
             </Button>
           </div>
-        </div>
-      </section>
-      {/* Features Section */}
-      <section className="py-16 md:py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">
-              Everything Your Worship Team Needs
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Designed specifically for worship leaders and teams to streamline
-              organization and enhance collaboration.
-            </p>
-          </div>{" "}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-orange-100 dark:border-orange-900/50">
-              <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2">
-                  <Music className="h-6 w-6 text-orange-500 dark:text-orange-400" />
-                </div>
-                <CardTitle>Song Management</CardTitle>
-                <CardDescription>
-                  Organize your songs with lyrics, chords, and key information
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {[
-                    "Store lyrics and chords",
-                    "Transpose songs to any key",
-                    "Add notes for team members",
-                    "Search by title or lyrics",
-                  ].map((feature) => (
-                    <li key={feature} className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-orange-500 dark:text-orange-400 mr-2" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>{" "}
-            <Card className="border-orange-100 dark:border-orange-900/50">
-              <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2">
-                  <Calendar className="h-6 w-6 text-orange-500 dark:text-orange-400" />
-                </div>
-                <CardTitle>Setlist Builder</CardTitle>
-                <CardDescription>
-                  Create and share setlists for your worship services
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {[
-                    "Drag-and-drop interface",
-                    "Share with your team",
-                    "Export to PDF",
-                    "Track song usage history",
-                  ].map((feature) => (
-                    <li key={feature} className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-orange-500 dark:text-orange-400 mr-2" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-            <Card className="border-orange-100 dark:border-orange-900/50">
-              <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2">
-                  <Users className="h-6 w-6 text-orange-500 dark:text-orange-400" />
-                </div>
-                <CardTitle>Team Collaboration</CardTitle>
-                <CardDescription>
-                  Collaborate with your team members seamlessly
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {[
-                    "Assign roles to members",
-                    "Share notes and feedback",
-                    "Manage multiple groups",
-                    "Real-time updates",
-                  ].map((feature) => (
-                    <li key={feature} className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-orange-500 dark:text-orange-400 mr-2" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+
+          {/* Mini preview cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-orange-100 dark:border-orange-900/30">
+              <div className="h-12 w-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                <Music className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                Biblioteca Musical
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Organize todas as suas músicas com cifras e letras
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-orange-100 dark:border-orange-900/30">
+              <div className="h-12 w-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                <List className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                Setlists Inteligentes
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Crie escalas de forma rápida e intuitiva
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-orange-100 dark:border-orange-900/30">
+              <div className="h-12 w-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                <Users className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                Colaboração
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Compartilhe e colabore com sua equipe
+              </p>
+            </div>
           </div>
         </div>
       </section>{" "}
-      {/* Testimonials Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-background to-orange-300 dark:to-orange-950/20">
-        <div className="container mx-auto px-4">
+      {/* Features Section */}
+      <section className="py-20 bg-white dark:bg-slate-900">
+        <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Loved by Worship Teams</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Join hundreds of worship teams already using Rise Worship to
-              streamline their ministry.
+            <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Tudo que você precisa em um só lugar
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              Ferramentas pensadas especialmente para músicos e líderes de
+              louvor
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                quote:
-                  "Rise Worship has transformed how our team prepares for Sunday services. Everything is organized and accessible.",
-                author: "Michael Johnson",
-                role: "Worship Leader, Grace Community Church",
-              },
-              {
-                quote:
-                  "The ability to quickly create and share setlists with our team has saved us hours of preparation time each week.",
-                author: "Sarah Williams",
-                role: "Music Director, Hillside Chapel",
-              },
-              {
-                quote:
-                  "As someone who leads multiple worship teams, having all our songs and setlists in one place is invaluable.",
-                author: "David Chen",
-                role: "Worship Pastor, New Life Fellowship",
-              },
-            ].map((testimonial, index) => (
-              <Card
-                key={index}
-                className="bg-background border-orange-100 dark:border-orange-900/50"
-              >
-                <CardContent className="pt-6">
-                  <p className="mb-6 italic">{`"${testimonial.quote}"`}</p>
-                  <div>
-                    <p className="font-semibold">{testimonial.author}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {testimonial.role}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-orange-100 dark:border-orange-900/30 bg-gradient-to-br from-white to-orange-50/30 dark:from-slate-800 dark:to-orange-950/20">
+              <CardHeader className="pb-4">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Search className="h-7 w-7 text-white" />
+                </div>
+                <CardTitle className="text-xl text-slate-900 dark:text-white">
+                  Busca Inteligente
+                </CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-300">
+                  Encontre qualquer música rapidamente por título, artista ou
+                  trecho da letra
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-orange-100 dark:border-orange-900/30 bg-gradient-to-br from-white to-orange-50/30 dark:from-slate-800 dark:to-orange-950/20">
+              <CardHeader className="pb-4">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Play className="h-7 w-7 text-white" />
+                </div>
+                <CardTitle className="text-xl text-slate-900 dark:text-white">
+                  Transposição Automática
+                </CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-300">
+                  Mude o tom das suas músicas instantaneamente para qualquer
+                  tonalidade
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-orange-100 dark:border-orange-900/30 bg-gradient-to-br from-white to-orange-50/30 dark:from-slate-800 dark:to-orange-950/20">
+              <CardHeader className="pb-4">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <List className="h-7 w-7 text-white" />
+                </div>
+                <CardTitle className="text-xl text-slate-900 dark:text-white">
+                  Setlists Personalizadas
+                </CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-300">
+                  Crie escalas musicais organizadas e compartilhe com sua equipe
+                  em tempo real
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-orange-100 dark:border-orange-900/30 bg-gradient-to-br from-white to-orange-50/30 dark:from-slate-800 dark:to-orange-950/20">
+              <CardHeader className="pb-4">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Users className="h-7 w-7 text-white" />
+                </div>
+                <CardTitle className="text-xl text-slate-900 dark:text-white">
+                  Gestão de Equipes
+                </CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-300">
+                  Organize múltiplas equipes e colabore de forma eficiente com
+                  todos os membros
+                </CardDescription>
+              </CardHeader>
+            </Card>
           </div>
         </div>
       </section>{" "}
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-background">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to Elevate Your Worship Ministry?
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10">
-            Join Rise Worship today and experience the difference organization
-            and collaboration can make.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <section className="py-20 bg-gradient-to-r from-orange-500 to-orange-600">
+        <div className="container mx-auto px-6 text-center">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Pronto para transformar seu ministério?
+            </h2>
+            <p className="text-xl text-orange-100 mb-10">
+              Junte-se a centenas de equipes que já organizam melhor seus
+              momentos de louvor
+            </p>
             <Button
               asChild
               size="lg"
-              className="bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white"
+              className="bg-white text-orange-600 hover:bg-orange-50 font-semibold px-10 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
             >
-              <Link href="/register">Create Free Account</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="dark:border-orange-800 dark:text-orange-100"
-            >
-              <Link href="/login">Sign In</Link>
+              <Link href="/register">
+                Criar Conta Gratuita
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
           </div>
         </div>
       </section>
       {/* Footer */}
-      <footer className="py-8 bg-background border-t dark:border-orange-950/30">
-        <div className="container mx-auto px-4">
+      <footer className="py-8 bg-slate-900 dark:bg-slate-950">
+        <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
-              <Music className="h-6 w-6 text-orange-500 dark:text-orange-400 mr-2" />
-              <span className="font-bold">Rise Worship</span>
+              <div className="h-8 w-8 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+                <Music className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-bold text-white text-lg">Rise Worship</span>
             </div>
-            <div className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Rise Worship. All rights reserved.
+            <div className="text-slate-400">
+              © {new Date().getFullYear()} Rise Worship. Todos os direitos
+              reservados.
             </div>
           </div>
         </div>

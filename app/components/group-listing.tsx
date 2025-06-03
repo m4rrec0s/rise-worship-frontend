@@ -1,20 +1,13 @@
 import Link from "next/link";
-import { Music, Plus, Users, Calendar } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { useApi } from "@/app/hooks/use-api";
 import { Group as TypeGroup } from "@/app/types/group";
 import { LoadingIcon } from "./loading-icon";
 import { toast } from "sonner";
 import { useAuth } from "../context/auth-context";
+import GroupItem from "./groupItem";
 
 interface GroupInfoProps extends TypeGroup {
   stats: {
@@ -129,116 +122,72 @@ export function GroupListing() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [fetchGroups, user]);
-
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4 flex justify-center items-center min-h-[60vh]">
-        <LoadingIcon />
+      <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-orange-950/10">
+        <div className="container mx-auto py-12 px-6 flex justify-center items-center min-h-[70vh]">
+          <LoadingIcon />
+        </div>
       </div>
     );
   }
-
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Seus grupos</h1>
-        </div>
-        <Button asChild className="bg-orange-500 hover:bg-orange-600">
-          <Link href="/create-group" className="text-xs">
-            <Plus className="h-4 w-4" />
-            Criar Novo Grupo
-          </Link>
-        </Button>
-      </div>
-
-      {groups.length === 0 ? (
-        <div className="text-center py-12">
-          <h2 className="text-base font-semibold mb-2">
-            Nenhum grupo encontrado
-          </h2>
-          <p className="text-muted-foreground mb-6 text-sm">
-            Você ainda não participa de nenhum grupo. Pesquise por grupos
-            existentes ou crie um novo grupo de louvor.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groups.map((group) => (
-            <Link
-              key={group.id}
-              href={`/groups/${group.id}`}
-              className="block group"
-            >
-              <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900 group-hover:border-orange-200">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-4">
-                    <div className="relative h-16 w-16 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center border-2 border-orange-200">
-                      <Image
-                        src={group.imageUrl || "/placeholder-groups.png"}
-                        alt={group.name}
-                        fill
-                        sizes="80px"
-                        priority
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <CardTitle className="group-hover:text-orange-500 transition-colors">
-                        {group.name}
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Criado em{" "}
-                        {new Date(group.createdAt).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="grid grid-cols-3 gap-2 mt-4">
-                    <div className="flex flex-col items-center p-2 bg-muted rounded-md">
-                      {" "}
-                      <Music className="h-4 w-4 text-orange-500 mb-1" />
-                      <span className="text-sm font-medium">
-                        {groupsInfo[group.id]?.stats.musicsCount || 0}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Músicas
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-center p-2 bg-muted rounded-md">
-                      <Calendar className="h-4 w-4 text-orange-500 mb-1" />
-                      <span className="text-sm font-medium">
-                        {groupsInfo[group.id]?.stats.setlistsCount || 0}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Setlists
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-center p-2 bg-muted rounded-md">
-                      <Users className="h-4 w-4 text-orange-500 mb-1" />
-                      <span className="text-sm font-medium">
-                        {groupsInfo[group.id]?.stats.membersCount || 0}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Membros
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-2">
-                  <Button
-                    variant="ghost"
-                    className="w-full text-orange-500 group-hover:bg-orange-50 dark:group-hover:bg-orange-900"
-                  >
-                    Ver Grupo
-                  </Button>
-                </CardFooter>
-              </Card>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-orange-950/10">
+      <div className="container mx-auto py-12 px-6">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
+          <div className="mb-6 md:mb-0">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 to-orange-600 dark:from-white dark:to-orange-400 bg-clip-text text-transparent mb-2">
+              Seus Grupos
+            </h1>
+            <p className="text-lg text-slate-600 dark:text-slate-300">
+              Gerencie e colabore com suas equipes de louvor
+            </p>
+          </div>
+          <Button
+            asChild
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-fit"
+          >
+            <Link href="/create-group" className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Criar Novo Grupo
             </Link>
-          ))}
+          </Button>
         </div>
-      )}
+
+        {groups.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="max-w-md mx-auto">
+              <div className="h-20 w-20 bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Plus className="h-10 w-10 text-orange-500" />
+              </div>
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-3">
+                Nenhum grupo encontrado
+              </h2>
+              <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
+                Você ainda não participa de nenhum grupo. Comece criando seu
+                primeiro grupo de louvor ou peça para ser adicionado a um grupo
+                existente.
+              </p>
+              <Button
+                asChild
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <Link href="/create-group" className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Criar Primeiro Grupo
+                </Link>
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {groups.map((group) => (
+              <GroupItem key={group.id} group={group} groupsInfo={groupsInfo} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
