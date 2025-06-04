@@ -193,6 +193,26 @@ export default function EditGroupPage() {
     }
   };
 
+  const handleDeleteGroup = async () => {
+    if (!isAdmin) {
+      toast.error("Você não tem permissão para excluir este grupo");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await api.deleteGroup(groupId);
+      api.clearGroupsCache();
+      toast.success("Grupo excluído com sucesso!");
+      router.push("/");
+    } catch (error) {
+      console.error("Erro ao excluir grupo:", error);
+      toast.error("Erro ao excluir grupo");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 flex justify-center items-center min-h-[60vh]">
@@ -331,7 +351,7 @@ export default function EditGroupPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex sm:justify-end flex-col gap-3">
           <Button variant="outline" asChild disabled={isSaving}>
             <Link href={`/groups/${groupId}`}>Cancelar</Link>
           </Button>
@@ -352,7 +372,12 @@ export default function EditGroupPage() {
           {isAdmin && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" disabled={isSaving}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  disabled={isSaving}
+                >
                   <Trash className="mr-2 h-4 w-4" />
                   Excluir Grupo
                 </Button>
@@ -371,56 +396,7 @@ export default function EditGroupPage() {
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>{" "}
                   <AlertDialogAction
                     className="bg-red-600 hover:bg-red-700"
-                    onClick={async () => {
-                      try {
-                        setIsSaving(true);
-                        console.log("Tentando excluir grupo com ID:", groupId);
-                        await api.deleteGroup(groupId);
-                        toast.success("Grupo excluído com sucesso!");
-                        router.push("/groups");
-                      } catch (error) {
-                        console.error(
-                          "Erro detalhado ao excluir grupo:",
-                          error
-                        );
-
-                        if (
-                          error &&
-                          typeof error === "object" &&
-                          "response" in error
-                        ) {
-                          const axiosError = error as {
-                            response?: {
-                              status?: number;
-                              data?: unknown;
-                              headers?: unknown;
-                            };
-                          };
-
-                          if (axiosError.response?.status === 400) {
-                            toast.error(
-                              "Não é possível excluir este grupo. Pode haver músicas, setlists ou membros associados."
-                            );
-                          } else if (axiosError.response?.status === 403) {
-                            toast.error(
-                              "Você não tem permissão para excluir este grupo."
-                            );
-                          } else if (axiosError.response?.status === 404) {
-                            toast.error("Grupo não encontrado.");
-                          } else {
-                            toast.error(
-                              "Erro ao excluir grupo. Tente novamente."
-                            );
-                          }
-                        } else {
-                          toast.error(
-                            "Erro ao excluir grupo. Verifique sua conexão."
-                          );
-                        }
-                      } finally {
-                        setIsSaving(false);
-                      }
-                    }}
+                    onClick={handleDeleteGroup}
                   >
                     Excluir
                   </AlertDialogAction>

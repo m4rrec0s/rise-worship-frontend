@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import useApi from "@/app/hooks/use-api";
 import { Textarea } from "@/app/components/ui/textarea";
 import Image from "next/image";
-import { Camera } from "lucide-react";
+import { Camera, ChevronLeftIcon } from "lucide-react";
 
 const CreateSetlistPage = () => {
   const params = useParams();
@@ -112,7 +112,7 @@ const CreateSetlistPage = () => {
       await createSetList(form);
       clearSetlistsCache();
       toast.success("Setlist criada com sucesso!");
-      router.push(`/groups/${groupId}`);
+      router.push(`/groups/${groupId}/setlists`);
     } catch (error) {
       toast.error("Erro ao criar setlist. Tente novamente.");
     } finally {
@@ -120,9 +120,23 @@ const CreateSetlistPage = () => {
     }
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <section className="w-full h-full">
       <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            className="text-sm font-semibold"
+          >
+            <ChevronLeftIcon className="h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
         <h1 className="text-2xl font-bold">Criação de SetList</h1>
 
         <p className="text-gray-500 mt-2">

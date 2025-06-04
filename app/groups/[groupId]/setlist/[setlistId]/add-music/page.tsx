@@ -106,9 +106,9 @@ const AddMusicPage = () => {
     }
   };
 
-  const handleBackToSetlist = () => {
+  const handleBack = () => {
     api.clearSetlistsCache();
-    router.push(`/groups/${groupId}/setlist/${setlistId}`);
+    router.back();
   };
 
   if (loading) {
@@ -142,7 +142,7 @@ const AddMusicPage = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleBackToSetlist}
+            onClick={handleBack}
             className="mr-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -218,12 +218,6 @@ const AddMusicPage = () => {
             );
           })
         )}
-      </div>
-
-      <div className="mt-8 flex justify-end">
-        <Button variant="default" onClick={handleBackToSetlist}>
-          Concluído
-        </Button>
       </div>
     </div>
   );

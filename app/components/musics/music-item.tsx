@@ -27,22 +27,22 @@ const MusicItem = ({ groupId, item, className = "" }: MusicItemProps) => {
         href={`/groups/${groupId}/music/${musicData.id}`}
         className="block group"
       >
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="py-4">
-            <div className="flex justify-between items-center gap-2">
-              <div className="flex flex-col sm:max-w-none max-w-[70%]">
-                <CardTitle className="sm:text-lg text-sm">
+        <Card className="hover:shadow-xl transition-all duration-200 border-0 bg-gradient-to-br from-white to-orange-50/40 dark:from-slate-900 dark:to-orange-950/10 overflow-hidden">
+          <CardHeader className="py-4 px-5">
+            <div className="flex justify-between items-center gap-3 flex-nowrap w-full min-w-0">
+              <div className="flex flex-col sm:max-w-none max-w-[70vw] min-w-0 w-0 flex-1">
+                <CardTitle className="sm:text-xl text-base font-bold bg-gradient-to-r from-slate-900 to-orange-600 dark:from-white dark:to-orange-400 bg-clip-text text-transparent group-hover:brightness-110 transition-all truncate">
                   {musicData.title}
                 </CardTitle>
-                <CardDescription className="max-sm:text-xs">
+                <CardDescription className="max-sm:text-xs text-slate-500 dark:text-slate-300 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                   {musicData.author}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-sm font-medium text-nowrap">
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300 px-2 py-1 rounded-md text-xs font-semibold shadow-sm whitespace-nowrap">
                   Tom: {musicData.tone}
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-5 w-5 text-orange-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
               </div>
             </div>
           </CardHeader>

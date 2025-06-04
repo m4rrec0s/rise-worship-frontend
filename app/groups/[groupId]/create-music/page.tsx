@@ -310,6 +310,10 @@ export default function CreateMusicPage() {
     router.push(`/groups/${groupId}`);
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 flex justify-center items-center min-h-[60vh]">
@@ -332,10 +336,8 @@ export default function CreateMusicPage() {
   return (
     <div className="container mx-auto py-8 px-5">
       <div className="flex items-center gap-2 mb-8">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/groups/${groupId}`}>
-            <ChevronLeft className="h-5 w-5" />
-          </Link>
+        <Button variant="ghost" size="icon" onClick={handleBack}>
+          <ChevronLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-2xl font-bold">
           Adicionar Nova Música - {group.name}

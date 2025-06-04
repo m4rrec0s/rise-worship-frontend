@@ -27,18 +27,15 @@ export default function GroupSetlistsPage() {
   const [setlists, setSetlists] = useState<Setlist[]>([]);
   const [permission, setPermission] = useState("");
 
-  // Memoriza as funções do api para evitar loop infinito
   const getSetListsByGroup = api.getSetListsByGroup;
   const getGroupMembers = api.getGroupMembers;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Buscar setlists
         const setlistsResponse = await getSetListsByGroup(groupId);
         setSetlists(setlistsResponse);
 
-        // Buscar permissões do usuário
         const membersResponse = await getGroupMembers(groupId);
         const permissionFound = membersResponse.find(
           (member: MemberData) => member.user.id === user?.id

@@ -69,9 +69,10 @@ const SetListPage = () => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setlistId]);
+
   const handleBack = () => {
     clearSetlistsCache();
-    router.push(`/groups/${groupId}`);
+    router.back();
   };
 
   const handleDeleteSetlist = async () => {
@@ -103,21 +104,21 @@ const SetListPage = () => {
         {setlist ? (
           <div>
             <div className="flex items-center gap-4 mb-6">
-              <div className="h-20 w-20 rounded-lg overflow-hidden bg-orange-100 flex items-center justify-center">
+              <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-orange-100 flex items-center justify-center">
                 <Image
-                  src={setlist.imageUrl || "/images/default-setlist.png"}
+                  src={setlist.imageUrl || "/placeholder-setlist.png"}
                   alt="Setlist Image"
-                  width={80}
-                  height={80}
+                  fill
+                  sizes="(max-width: 20px) 20px, (max-width: 40px) 40px, 100px"
                   className="object-cover"
                 />
               </div>
               <div className="flex-1">
-                <div className="flex items-start justify-between">
+                <div className="flex sm:items-start flex-col justify-between space-y-2 sm:space-y-0 sm:flex-row">
                   <div>
                     <h1 className="text-2xl font-bold mb-4">{setlist.title}</h1>
                     <p>{setlist.description}</p>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-xs text-gray-500 mt-2">
                       Criado em:{" "}
                       {new Date(setlist.createdAt).toLocaleDateString()} por{" "}
                       <strong>{setlist.creator?.name}</strong>
@@ -181,11 +182,16 @@ const SetListPage = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2  gap-4 mt-4">
-              {setlist.musics &&
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              {setlist.musics && setlist.musics.length > 0 ? (
                 setlist.musics.map((music) => (
                   <MusicItem groupId={groupId} item={music} key={music.id} />
-                ))}
+                ))
+              ) : (
+                <div className="flex-1 col-span-1 sm:col-span-2 text-center flex justify-center items-center text-gray-500">
+                  Nenhuma música adicionada a esta setlist ainda.
+                </div>
+              )}
             </div>
           </div>
         ) : (

@@ -113,7 +113,7 @@ const ProfilePage = () => {
 
         <form
           onSubmit={handleFormSubmit}
-          className="mt-6 w-full mx-auto px-8 border-t pt-4"
+          className="mt-6 w-full mx-auto px-8 border-t pt-4 max-w-2xl"
         >
           <h3 className="text-base font-semibold">Dados Pessoais</h3>
           <p className="text-sm text-gray-500 mb-4">

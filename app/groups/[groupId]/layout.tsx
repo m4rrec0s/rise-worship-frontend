@@ -129,9 +129,16 @@ export default function GroupLayout({
     );
   }
 
+  if (!navigationItems.some((item) => pathname === item.href)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-orange-950/10">
+        <div className="container mx-auto py-8 px-6">{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-orange-950/10">
-      {/* Header */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="container mx-auto py-8 px-6">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -148,7 +155,7 @@ export default function GroupLayout({
                 <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-2">
                   {group.name}
                 </h1>
-                <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
                   {group.description}
                 </p>
               </div>
@@ -179,7 +186,6 @@ export default function GroupLayout({
             </div>
           </div>
 
-          {/* Navigation */}
           <div className="mt-8">
             <nav className="flex space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
               {navigationItems.map((item) => {
@@ -190,7 +196,7 @@ export default function GroupLayout({
                   <Link
                     key={item.id}
                     href={item.href}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${
                       isActive
                         ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm"
                         : "text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-white/50 dark:hover:bg-slate-700/50"
