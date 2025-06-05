@@ -144,6 +144,18 @@ class ApiService {
     return response.data;
   };
 
+  getUsersByEmail = async (email: string) => {
+    const cacheKey = `users_email_${email}`;
+    if (ApiService.globalCache[cacheKey])
+      return ApiService.globalCache[cacheKey];
+
+    const response = await axiosClient.get(
+      `/users/search?email=${encodeURIComponent(email)}`
+    );
+    ApiService.globalCache[cacheKey] = response.data;
+    return response.data;
+  };
+
   getUserById = async (id: string) => {
     const response = await axiosClient.get(`/user/${id}`);
     return response.data;
@@ -166,10 +178,6 @@ class ApiService {
         "Content-Type": "multipart/form-data",
       },
     });
-
-    // Debug: vamos inspecionar a resposta do backend
-    console.log("Resposta bruta do backend:", response);
-    console.log("response.data:", response.data);
 
     this.clearCache("groups");
     Object.keys(ApiService.getGlobalCache()).forEach((key) => {
@@ -244,11 +252,13 @@ class ApiService {
     this.clearCache(`group_info_${groupId}`);
     return response.data;
   };
+
   addUserToGroup = async (groupId: string, userData: AddUserToGroupData) => {
-    const response = await axiosClient.post(
-      `/groups/${groupId}/members`,
-      userData
-    );
+    const { userId, permission = "view" } = userData;
+    const response = await axiosClient.post(`/groups/${groupId}/members`, {
+      userId,
+      permission,
+    });
 
     this.clearCache(`group_members_${groupId}`);
     this.clearCache(`group_info_${groupId}`);
@@ -317,32 +327,13 @@ class ApiService {
   };
   deleteGroup = async (groupId: string) => {
     try {
-      console.log("API: Enviando requisição DELETE para /groups/", groupId);
-      console.log("API: Tipo do groupId:", typeof groupId);
-      console.log("API: Comprimento do groupId:", groupId.length);
-      console.log(
-        "API: GroupId caracteres:",
-        groupId.split("").map((c) => c.charCodeAt(0))
-      );
-
-      // Validação básica do groupId
       if (!groupId || groupId.trim() === "") {
         throw new Error("GroupId é obrigatório");
       }
 
       const url = `/groups/${encodeURIComponent(groupId)}`;
-      console.log("API: URL final:", url);
-
-      // Verificar se o usuário tem permissão antes de tentar excluir
-      try {
-        const groupMembers = await this.getGroupMembers(groupId);
-        console.log("API: Membros do grupo:", groupMembers);
-      } catch (memberError) {
-        console.warn("API: Não foi possível verificar membros:", memberError);
-      }
 
       const response = await axiosClient.delete(url);
-      console.log("API: Resposta do delete grupo:", response);
 
       this.clearCache("groups");
       this.clearCache(`group_${groupId}`);
@@ -357,7 +348,6 @@ class ApiService {
     } catch (error) {
       console.error("API: Erro ao fazer DELETE do grupo:", error);
 
-      // Log detalhado do erro para debug
       if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as {
           response?: {
@@ -374,7 +364,6 @@ class ApiService {
           axiosError.response?.config
         );
 
-        // Fornecer mensagens mais específicas baseadas no status
         if (axiosError.response?.status === 400) {
           console.error("API: Erro 400 - Possíveis causas:");
           console.error(

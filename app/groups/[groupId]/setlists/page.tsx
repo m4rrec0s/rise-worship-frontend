@@ -26,12 +26,15 @@ export default function GroupSetlistsPage() {
 
   const [setlists, setSetlists] = useState<Setlist[]>([]);
   const [permission, setPermission] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   const getSetListsByGroup = api.getSetListsByGroup;
   const getGroupMembers = api.getGroupMembers;
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
+
       try {
         const setlistsResponse = await getSetListsByGroup(groupId);
         setSetlists(setlistsResponse);
@@ -45,6 +48,8 @@ export default function GroupSetlistsPage() {
         }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -57,6 +62,7 @@ export default function GroupSetlistsPage() {
   return (
     <SetListList
       groupId={groupId}
+      isLoading={isLoading}
       setlists={setlists}
       userPermissions={permission}
     />

@@ -24,14 +24,14 @@ export default function GroupSongsPage() {
   const api = useApi();
   const groupId = params.groupId as string;
   const { user } = useAuth();
-
   const [musics, setMusics] = useState<MusicType[]>([]);
   const [members, setMembers] = useState<MemberData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [permission, setPermission] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Memoriza as funções do api para evitar loop infinito
   const getGroupMembers = api.getGroupMembers;
@@ -59,17 +59,27 @@ export default function GroupSongsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, groupId]);
-
   const loadMusics = useCallback(
-    async (page: number, perPage: number, search: string) => {
+    async (
+      page: number,
+      perPage: number,
+      search: string,
+      isInitial = false
+    ) => {
       try {
-        setIsLoading(true);
+        if (isInitial) {
+          setIsInitialLoading(true);
+        } else {
+          setIsLoadingMore(true);
+        }
+
         const response = await getMusicsByGroupPaginated(
           groupId,
           page,
           perPage,
           search
         );
+
         setHasMore(response.pagination.hasNext);
         setMusics((prevMusics) => {
           if (page === 1) {
@@ -86,18 +96,21 @@ export default function GroupSongsPage() {
         console.error("Erro ao carregar músicas:", error);
         toast.error("Erro ao carregar músicas");
       } finally {
-        setIsLoading(false);
+        if (isInitial) {
+          setIsInitialLoading(false);
+        } else {
+          setIsLoadingMore(false);
+        }
       }
     },
     [groupId, getMusicsByGroupPaginated]
   );
-
   useEffect(() => {
     const loadInitialMusics = async () => {
       if (!groupId) return;
 
       try {
-        setIsLoading(true);
+        setIsInitialLoading(true);
         setMusics([]);
         setPage(1);
         setHasMore(true);
@@ -114,21 +127,22 @@ export default function GroupSongsPage() {
         console.error("Erro ao carregar músicas:", error);
         toast.error("Erro ao carregar músicas");
       } finally {
-        setIsLoading(false);
+        setIsInitialLoading(false);
       }
     };
-
     loadInitialMusics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, searchQuery]);
-
-  const loadMore = () => {
-    if (hasMore) {
+  const loadMore = useCallback(() => {
+    if (hasMore && !isLoadingMore) {
       const nextPage = page + 1;
-      loadMusics(nextPage, 10, searchQuery);
+      loadMusics(nextPage, 10, searchQuery, false);
       setPage(nextPage);
+    } else {
+      return;
     }
-  };
+  }, [hasMore, isLoadingMore, page, searchQuery, loadMusics]);
+
   const updateSearchQuery = (query: string) => {
     setSearchQuery(query);
     setPage(1);
@@ -142,13 +156,13 @@ export default function GroupSongsPage() {
     setHasMore(true);
     // Não chama loadMusics aqui pois o useEffect vai fazer isso
   };
-
   return (
     <MusicList
       clearSearch={clearSearch}
       groupId={groupId}
       musics={musics}
-      isLoading={isLoading}
+      isLoading={isInitialLoading}
+      isLoadingMore={isLoadingMore}
       searchQuery={searchQuery}
       setSearchQuery={updateSearchQuery}
       permission={permission}

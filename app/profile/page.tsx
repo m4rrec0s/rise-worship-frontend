@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Edit2 } from "lucide-react";
 import { useAuth } from "../context/auth-context";
 import { Button } from "../components/ui/button";
 import Image from "next/image";
@@ -83,7 +83,7 @@ const ProfilePage = () => {
       <section>
         <div className="flex flex-col items-center w-full">
           <div
-            className="relative w-24 h-24 mb-4 cursor-pointer"
+            className="relative w-24 h-24 mb-4 cursor-pointer group transition-opacity duration-200"
             onClick={() => fileInputRef.current?.click()}
           >
             <Input
@@ -103,6 +103,12 @@ const ProfilePage = () => {
               sizes="100%"
               className="rounded-full object-cover"
             />
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-200/80 dark:bg-gray-800/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <Edit2 className="h-6 w-6 text-gray-600 dark:text-gray-400 mb-1" />
+              <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">
+                Alterar
+              </span>
+            </div>
           </div>
 
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">

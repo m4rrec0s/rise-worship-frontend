@@ -82,15 +82,10 @@ const CreateGroupPage = () => {
       }
       const response = await api.createGroup(groupFormData);
 
-      console.log("Resposta completa da API:", response);
-      console.log("response.id:", response.id);
-      console.log("Chaves disponíveis:", Object.keys(response));
-
       api.clearAllGroupCaches();
 
       toast.success("Grupo criado com sucesso!");
 
-      // Tentar diferentes estruturas de resposta para encontrar o ID
       let groupId = null;
 
       if (response.id) {
@@ -104,8 +99,6 @@ const CreateGroupPage = () => {
       } else if (response.data && response.data._id) {
         groupId = response.data._id;
       }
-
-      console.log("ID do grupo encontrado:", groupId);
 
       if (groupId) {
         router.push(`/groups/${groupId}`);

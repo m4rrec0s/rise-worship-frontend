@@ -1,16 +1,10 @@
 import InfiniteScroll from "react-infinite-scroll-component";
-import { ChevronRight, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Music } from "@/app/types/music";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
+import { Card, CardContent } from "../ui/card";
 import { LoadingIcon } from "../loading-icon";
 import { useState } from "react";
 import { SetlistMusic } from "@/app/types/setlistMusic";
@@ -19,6 +13,7 @@ import MusicItem from "./music-item";
 interface MusicListProps {
   musics: Music[] | SetlistMusic[];
   isLoading: boolean;
+  isLoadingMore?: boolean;
   loadMore: () => void;
   hasMore: boolean;
   groupId: string;
@@ -32,6 +27,7 @@ const MusicList = ({
   clearSearch,
   groupId,
   isLoading,
+  isLoadingMore = false,
   musics,
   searchQuery,
   setSearchQuery,
@@ -101,7 +97,7 @@ const MusicList = ({
             </Link>
           </Button>
         )}
-      </div>
+      </div>{" "}
       {musics.length === 0 ? (
         <Card className="bg-muted/40">
           <CardContent className="py-8 text-center">
@@ -121,7 +117,8 @@ const MusicList = ({
                 Limpar Busca
               </Button>
             ) : (
-              (permission === "admin" || permission === "edit") && (
+              (permission === "admin" || permission === "edit") &&
+              !isLoading && (
                 <Button asChild className="bg-orange-500 hover:bg-orange-600">
                   <Link href={`/groups/${groupId}/create-music`}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -144,13 +141,14 @@ const MusicList = ({
             </div>
           }
           endMessage={
-            <p className="w-full text-center text-gray-500 text-sm py-4">
-              Não há mais músicas para carregar.
-            </p>
+            !isLoadingMore && (
+              <p className="w-full text-center text-gray-500 text-sm py-4">
+                Não há mais músicas para carregar.
+              </p>
+            )
           }
         >
           <div className="grid gap-4">
-            {" "}
             {musics.map((song) => (
               <MusicItem key={song.id} groupId={groupId} item={song} />
             ))}

@@ -15,14 +15,29 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
+import { LoadingIcon } from "../loading-icon";
 
 interface SetlistProps {
   groupId: string;
   userPermissions: string;
   setlists: Setlist[];
+  isLoading: boolean;
 }
 
-const SetListList = ({ groupId, setlists, userPermissions }: SetlistProps) => {
+const SetListList = ({
+  groupId,
+  setlists,
+  userPermissions,
+  isLoading,
+}: SetlistProps) => {
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex justify-center py-4">
+        <LoadingIcon size={30} />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex justify-between items-center mb-6">
