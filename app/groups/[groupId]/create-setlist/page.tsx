@@ -3,7 +3,7 @@
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Button } from "@/app/components/ui/button";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Setlist } from "@/app/types/setlist";
 import { Music } from "@/app/types/music";
 import { useParams, useRouter } from "next/navigation";
@@ -13,13 +13,14 @@ import useApi from "@/app/hooks/use-api";
 import { Textarea } from "@/app/components/ui/textarea";
 import Image from "next/image";
 import { Camera, ChevronLeftIcon } from "lucide-react";
+import { MemberData } from "../page";
 
 const CreateSetlistPage = () => {
   const params = useParams();
   const router = useRouter();
   const groupId = params.groupId as string;
   const { user } = useAuth();
-  const { createSetList, clearSetlistsCache } = useApi();
+  const { createSetList, clearSetlistsCache, getGroupMembers } = useApi();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user) {
@@ -30,6 +31,38 @@ const CreateSetlistPage = () => {
     toast.error("Grupo não encontrado");
     router.push("/groups");
   }
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        if (!groupId) return;
+
+        const membersResponse = await getGroupMembers(String(groupId));
+
+        const permissionFound = membersResponse.find(
+          (member: MemberData) => member.user.id === user?.id
+        );
+
+        if (
+          permissionFound?.permission !== "admin" &&
+          permissionFound?.permission !== "editor"
+        ) {
+          toast.error(
+            "Você não tem permissão para adicionar músicas a este grupo."
+          );
+          router.push(`/groups/${groupId}`);
+          return;
+        }
+      } catch (error) {
+        console.error("Erro ao carregar membros:", error);
+      }
+    };
+
+    if (user && groupId) {
+      fetchMembers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, groupId]);
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

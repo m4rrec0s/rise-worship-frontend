@@ -8,7 +8,7 @@ import { useAuth } from "@/app/context/auth-context";
 import { toast } from "sonner";
 import MusicList from "@/app/components/musics/music-list";
 
-interface MemberData {
+export interface MemberData {
   id: string;
   permission: string;
   user: {
@@ -33,7 +33,6 @@ export default function GroupSongsPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Memoriza as funções do api para evitar loop infinito
   const getGroupMembers = api.getGroupMembers;
   const getMusicsByGroupPaginated = api.getMusicsByGroupPaginated;
 
@@ -147,14 +146,12 @@ export default function GroupSongsPage() {
     setSearchQuery(query);
     setPage(1);
     setHasMore(true);
-    // Não chama loadMusics aqui pois o useEffect vai fazer isso
   };
 
   const clearSearch = () => {
     setSearchQuery("");
     setPage(1);
     setHasMore(true);
-    // Não chama loadMusics aqui pois o useEffect vai fazer isso
   };
   return (
     <MusicList

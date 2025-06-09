@@ -40,6 +40,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { MemberData } from "../page";
+import { useAuth } from "@/app/context/auth-context";
 
 interface SearchResult {
   title: string;
@@ -91,6 +93,7 @@ export default function CreateMusicPage() {
   const router = useRouter();
   const api = useApi();
   const groupId = params.groupId;
+  const { user } = useAuth();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [group, setGroup] = useState<Group | null>(null);
@@ -119,12 +122,46 @@ export default function CreateMusicPage() {
     lyrics: "",
     links: { youtube: "", spotify: "", deezer: "" },
   });
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        if (!groupId) return;
+
+        const membersResponse = await api.getGroupMembers(String(groupId));
+
+        const permissionFound = membersResponse.find(
+          (member: MemberData) => member.user.id === user?.id
+        );
+
+        if (
+          permissionFound?.permission !== "admin" &&
+          permissionFound?.permission !== "editor"
+        ) {
+          toast.error(
+            "Você não tem permissão para adicionar músicas a este grupo."
+          );
+          router.push(`/groups/${groupId}`);
+          return;
+        }
+      } catch (error) {
+        console.error("Erro ao carregar membros:", error);
+      }
+    };
+
+    if (user && groupId) {
+      fetchMembers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, groupId]);
+
   useEffect(() => {
     let isMounted = true;
     const fetchGroup = async () => {
       try {
         setIsLoading(true);
         const groupData = await api.getGroupById(String(groupId));
+
         if (isMounted) setGroup(groupData);
       } catch (error) {
         console.error("Erro ao carregar dados do grupo:", error);

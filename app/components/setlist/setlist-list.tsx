@@ -45,15 +45,17 @@ const SetListList = ({
           Setlists
         </h2>
         <Button
-          asChild
-          className="bg-orange-500 hover:bg-orange-600 shadow-lg rounded-xl font-semibold"
+          className="bg-orange-500 hover:bg-orange-600"
           disabled={
             userPermissions === "edit" || userPermissions === "admin"
               ? false
               : true
           }
         >
-          <Link href={`/groups/${groupId}/create-setlist`}>
+          <Link
+            href={`/groups/${groupId}/create-setlist`}
+            className="flex items-center gap-2"
+          >
             <Plus className="mr-2 h-5 w-5" />
             Criar Setlist
           </Link>
