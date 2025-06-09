@@ -44,17 +44,20 @@ const SetListList = ({
         <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-orange-600 dark:from-white dark:to-orange-400 bg-clip-text text-transparent">
           Setlists
         </h2>
-        {(userPermissions === "edit" || userPermissions === "admin") && (
-          <Button
-            asChild
-            className="bg-orange-500 hover:bg-orange-600 shadow-lg rounded-xl font-semibold"
-          >
-            <Link href={`/groups/${groupId}/create-setlist`}>
-              <Plus className="mr-2 h-5 w-5" />
-              Criar Setlist
-            </Link>
-          </Button>
-        )}
+        <Button
+          asChild
+          className="bg-orange-500 hover:bg-orange-600 shadow-lg rounded-xl font-semibold"
+          disabled={
+            userPermissions === "edit" || userPermissions === "admin"
+              ? false
+              : true
+          }
+        >
+          <Link href={`/groups/${groupId}/create-setlist`}>
+            <Plus className="mr-2 h-5 w-5" />
+            Criar Setlist
+          </Link>
+        </Button>
       </div>
       {setlists.length === 0 ? (
         <Card className="bg-gradient-to-br from-white to-orange-50/40 dark:from-slate-900 dark:to-orange-950/10 border-0 shadow-inner rounded-2xl">

@@ -89,14 +89,18 @@ const MusicList = ({
           )}{" "}
         </form>
 
-        {(permission === "admin" || permission === "edit") && (
-          <Button asChild className="bg-orange-500 hover:bg-orange-600">
-            <Link href={`/groups/${groupId}/create-music`}>
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar Música
-            </Link>
-          </Button>
-        )}
+        <Button
+          asChild
+          className="bg-orange-500 hover:bg-orange-600"
+          disabled={
+            permission === "admin" || permission === "edit" ? false : true
+          }
+        >
+          <Link href={`/groups/${groupId}/create-music`}>
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar Música
+          </Link>
+        </Button>
       </div>{" "}
       {musics.length === 0 ? (
         <Card className="bg-muted/40">

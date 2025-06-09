@@ -16,6 +16,12 @@ interface AddUserToGroupData {
   permission: string;
 }
 
+interface MusicExistsProps {
+  groupId: string;
+  title: string;
+  author: string;
+}
+
 class ApiService {
   private static globalCache: CacheType = {
     users: null,
@@ -614,6 +620,18 @@ class ApiService {
   };
 
   // ===== UTILITÁRIOS DE MÚSICA =====
+
+  verifyMusicExists = async ({ groupId, title, author }: MusicExistsProps) => {
+    const response = await axiosClient.get("/musics/exists", {
+      params: {
+        groupId,
+        title: encodeURIComponent(title),
+        author: encodeURIComponent(author),
+      },
+    });
+    return response.data;
+  };
+
   searchLyrics = async (query: string) => {
     const response = await axiosClient.get(
       `/search-lyrics?query=${encodeURIComponent(query)}`

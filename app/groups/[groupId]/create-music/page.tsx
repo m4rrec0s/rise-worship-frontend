@@ -275,6 +275,17 @@ export default function CreateMusicPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
+      const response = await api.verifyMusicExists({
+        title: formData.title,
+        author: formData.author,
+        groupId: String(groupId),
+      });
+
+      if (response.exists) {
+        toast.error("Esta música já existe no grupo.");
+        return;
+      }
+
       const musicData = new FormData();
       musicData.append("title", formData.title);
       musicData.append("author", formData.author);

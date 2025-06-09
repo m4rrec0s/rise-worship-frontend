@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useApi } from "@/app/hooks/use-api";
 import { useEffect, useState } from "react";
 import { Music } from "@/app/types/music";
-import { ChevronLeft, Edit, Music2 } from "lucide-react";
+import { ChevronLeft, Edit, Music2, Trash } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
@@ -12,6 +12,17 @@ import { LoadingIcon } from "@/app/components/loading-icon";
 import { useAuth } from "@/app/context/auth-context";
 import { Switch } from "@/app/components/ui/switch";
 import { Label } from "@/app/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/app/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface ChordLine {
   id: string;
@@ -29,7 +40,7 @@ const MusicPage = () => {
   const params = useParams();
   const musicId = params.musicId as string;
   const groupId = params.groupId as string;
-  const { getMusicById, getGroupMembers } = useApi();
+  const { getMusicById, getGroupMembers, deleteMusic } = useApi();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [music, setMusic] = useState<Music | null>(null);
@@ -152,6 +163,23 @@ const MusicPage = () => {
     return <div className="whitespace-pre-wrap">{result}</div>;
   };
 
+  const handleDeleteMusic = async () => {
+    if (!musicId || !groupId) return;
+
+    setIsLoading(true);
+    try {
+      await deleteMusic(musicId);
+
+      toast.success("Música excluída com sucesso!");
+      router.push(`/groups/${groupId}/`);
+    } catch (error) {
+      console.error("Erro ao excluir música:", error);
+      toast.error("Erro ao excluir música. Tente novamente mais tarde.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const canEditMusic = userPermission === "admin" || userPermission === "edit";
 
   if (isLoading) {
@@ -179,19 +207,52 @@ const MusicPage = () => {
             </div>
           </Button>
           {canEditMusic && music && (
-            <div className="flex gap-2">
-              <Button asChild variant="outline">
-                <Link href={`/groups/${groupId}/music/${musicId}/edit-cipher`}>
-                  <Music2 className="mr-2 h-4 w-4" />
-                  Editar Cifra
-                </Link>
-              </Button>
-              <Button asChild className="bg-orange-500 hover:bg-orange-600">
-                <Link href={`/groups/${groupId}/music/${musicId}/edit`}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar Música
-                </Link>
-              </Button>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                <Button asChild variant="outline">
+                  <Link
+                    href={`/groups/${groupId}/music/${musicId}/edit-cipher`}
+                  >
+                    <Music2 className="mr-2 h-4 w-4" />
+                    Editar Cifra
+                  </Link>
+                </Button>
+                <Button asChild className="bg-orange-500 hover:bg-orange-600">
+                  <Link href={`/groups/${groupId}/music/${musicId}/edit`}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar Música
+                  </Link>
+                </Button>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="text-red-600 hover:text-red-700 border border-red-600 hover:border-red-700"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir Música</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza de que deseja excluir esta música? Esta ação
+                      não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogAction asChild>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleDeleteMusic()}
+                    >
+                      <Trash className="mr-2 h-4 w-4" />
+                      Excluir
+                    </Button>
+                  </AlertDialogAction>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </div>

@@ -114,7 +114,6 @@ export default function GroupMembersPage() {
 
     document.addEventListener("mousedown", handleClickOutside);
 
-    // Cleanup timeout on unmount
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
@@ -281,9 +280,11 @@ export default function GroupMembersPage() {
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             Membros do Grupo
           </h2>
-          <p className="text-slate-600 dark:text-slate-300 mt-1">
-            Gerencie os membros e suas permissões
-          </p>
+          {isAdmin && (
+            <p className="text-slate-600 dark:text-slate-300 mt-1">
+              Gerencie os membros e suas permissões
+            </p>
+          )}
         </div>
       </div>
 
@@ -337,7 +338,7 @@ export default function GroupMembersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700">
                     {member.permission === "admin" && (
                       <>
