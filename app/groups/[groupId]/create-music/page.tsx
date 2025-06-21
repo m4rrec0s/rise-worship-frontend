@@ -27,7 +27,6 @@ import { toast } from "sonner";
 import { AxiosError } from "axios";
 import { LoadingIcon } from "@/app/components/loading-icon";
 import Image from "next/image";
-import Editor from "react-simple-code-editor";
 import { transpose, keys, wrap } from "@hrgui/chord-charts";
 import type { Group } from "@/app/types/group";
 import {
@@ -49,21 +48,10 @@ interface SearchResult {
   snippet: string;
 }
 
-interface ExtractedData {
-  title: string;
-  author: string;
-  lyrics: string;
-}
-
 interface ChordSegment {
   chord: string;
   lineIndex: number;
   charOffset: number;
-}
-
-interface Cipher {
-  key: string;
-  segments: ChordSegment[];
 }
 
 interface KeysSelectProps {
@@ -96,6 +84,7 @@ export default function CreateMusicPage() {
   const { user } = useAuth();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAddingMusic, setIsAddingMusic] = useState<boolean>(false);
   const [group, setGroup] = useState<Group | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [extractUrl, setExtractUrl] = useState<string>("");
@@ -311,6 +300,7 @@ export default function CreateMusicPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsAddingMusic(true);
     try {
       const response = await api.verifyMusicExists({
         title: formData.title,
@@ -320,6 +310,7 @@ export default function CreateMusicPage() {
 
       if (response.exists) {
         toast.error("Esta música já existe no grupo.");
+        setIsAddingMusic(false);
         return;
       }
 
@@ -348,6 +339,8 @@ export default function CreateMusicPage() {
         errorMessage = error.response.data.error;
       }
       toast.error(`Erro ao adicionar música: ${errorMessage}`);
+    } finally {
+      setIsAddingMusic(false);
     }
   };
   const handleGoToCipherEdit = () => {
@@ -491,6 +484,7 @@ export default function CreateMusicPage() {
                   value={formData.title}
                   onChange={handleInputChange}
                   required
+                  disabled={isSearching || isAddingMusic}
                 />
               </div>
               <div className="space-y-2">
@@ -501,6 +495,7 @@ export default function CreateMusicPage() {
                   value={formData.author}
                   onChange={handleInputChange}
                   required
+                  disabled={isSearching || isAddingMusic}
                 />
               </div>
               <div className="space-y-2">
@@ -515,6 +510,7 @@ export default function CreateMusicPage() {
                   type="number"
                   value={formData.bpm}
                   onChange={handleInputChange}
+                  disabled={isSearching || isAddingMusic}
                 />
               </div>
             </div>
@@ -534,6 +530,7 @@ export default function CreateMusicPage() {
                       variant="destructive"
                       onClick={handleRemoveImage}
                       size="sm"
+                      disabled={isSearching || isAddingMusic}
                     >
                       Remover imagem
                     </Button>
@@ -553,6 +550,7 @@ export default function CreateMusicPage() {
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="hidden"
+                      disabled={isSearching || isAddingMusic}
                     />
                     <span className="text-xs text-muted-foreground">
                       Formatos suportados: JPG, PNG, GIF. Tamanho máximo: 5MB
@@ -616,17 +614,26 @@ export default function CreateMusicPage() {
                 onChange={handleInputChange}
                 rows={10}
                 required
+                disabled={isSearching || isAddingMusic}
               />
             </div>
           </CardContent>
         </Card>
 
         <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" asChild>
+          <Button
+            variant="outline"
+            asChild
+            disabled={isSearching || isAddingMusic}
+          >
             <Link href={`/groups/${groupId}`}>Cancelar</Link>
           </Button>
-          <Button type="submit" className="bg-orange-500 hover:bg-orange-600">
-            Salvar Música
+          <Button
+            type="submit"
+            className="bg-orange-500 hover:bg-orange-600"
+            disabled={isSearching || isAddingMusic}
+          >
+            {isAddingMusic ? <LoadingIcon /> : "Adicionar Música"}
           </Button>
         </div>
       </form>
